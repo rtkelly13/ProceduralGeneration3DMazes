@@ -6,11 +6,13 @@ namespace MazeGeneration
 {
     public interface IMaze
     {
-        bool HasVertexes(MazePoint p, Direction flag);
-        Direction GetFlagFromPoint(MazePoint p);
-        IEnumerable<Direction> GetsDirectionsFromPoint(MazePoint p);
-        void BaseInitialise(MazeSize size, bool allVertexes);
+        Direction GetFlagFromPoint();
+        IEnumerable<Direction> GetsDirectionsFromPoint();
 
+        bool HasVertexes(Direction flag);
+        void MoveInDirection(Direction d);
+
+        MazePoint CurrentPoint { get; }
         MazeSize Size { get; }
     }
 }

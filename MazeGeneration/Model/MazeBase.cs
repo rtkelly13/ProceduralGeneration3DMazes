@@ -4,7 +4,7 @@ using MazeGeneration.Helper;
 
 namespace MazeGeneration.Model
 {
-    public abstract class MazeBase : IMaze
+    public abstract class MazeBase
     {
         protected readonly IDirectionsFlagParser FlagParser;
 

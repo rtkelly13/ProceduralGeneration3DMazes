@@ -10,11 +10,13 @@ namespace MazeGeneration.Helper
     {
         private readonly IDirectionsFlagParser _flagParser;
         private readonly IMazePointFactory _pointFactory;
+        private readonly IPointValidity _pointValidity;
 
-        public MovementHelper(IDirectionsFlagParser flagParser, IMazePointFactory pointFactory)
+        public MovementHelper(IDirectionsFlagParser flagParser, IMazePointFactory pointFactory, IPointValidity pointValidity)
         {
             _flagParser = flagParser;
             _pointFactory = pointFactory;
+            _pointValidity = pointValidity;
         }
 
         public IEnumerable<Direction> AdjacentPoints(MazePoint p, MazeSize size)
@@ -88,24 +90,7 @@ namespace MazeGeneration.Helper
                 default:
                     throw new ArgumentException("Unsupported movement direction");
             }
-            return ValidPoint(final, size);
-        }
-
-        public bool ValidPoint(MazePoint p, MazeSize size)
-        {
-            if (p.X < 0 || p.X > size.Width - 1)
-            {
-                return false;
-            }
-            if (p.Y < 0 || p.Y > size.Height - 1)
-            {
-                return false;
-            } 
-            if (p.Z < 0 || p.Z > size.Depth - 1)
-            {
-                return false;
-            }
-            return true;
+            return _pointValidity.ValidPoint(final, size);
         }
     }
 }

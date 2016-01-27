@@ -38,20 +38,17 @@ namespace MazeGeneration.Helper
 
         public Direction OppositeDirection(Direction d)
         {
-            if (_directions.Any(x => x == d))
+            switch (d)
             {
-                switch (d)
-                {
-                    case Direction.Left:
-                    case Direction.Right:
-                        return Direction.XAxis & ~d;
-                    case Direction.Up:
-                    case Direction.Down:
-                        return Direction.YAxis & ~d;
-                    case Direction.Back:
-                    case Direction.Forward:
-                        return Direction.ZAxis & ~d;
-                }
+                case Direction.Left:
+                case Direction.Right:
+                    return Direction.XAxis & ~d;
+                case Direction.Up:
+                case Direction.Down:
+                    return Direction.YAxis & ~d;
+                case Direction.Back:
+                case Direction.Forward:
+                    return Direction.ZAxis & ~d;
             }
             throw new ArgumentException("Not a valid direction");
         }

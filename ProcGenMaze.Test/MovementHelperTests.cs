@@ -12,18 +12,21 @@ using NUnit.Framework;
 
 namespace ProcGenMaze.Test
 {
+    [TestFixture]
     public class MovementHelperTests
     {
         private IMovementHelper _movementHelper;
         private Mock<IDirectionsFlagParser> _flagParser;
         private Mock<IMazePointFactory> _pointFactory;
+        private IPointValidity _pointValidity;
 
         [SetUp]
         public void Setup()
         {
             _flagParser = new Mock<IDirectionsFlagParser>();
             _pointFactory = new Mock<IMazePointFactory>();
-            _movementHelper = new MovementHelper(_flagParser.Object, _pointFactory.Object);
+            _pointValidity = new PointValidity();
+            _movementHelper = new MovementHelper(_flagParser.Object, _pointFactory.Object, _pointValidity);
         }
 
         [Test]
@@ -87,40 +90,5 @@ namespace ProcGenMaze.Test
             Assert.That(direction, Is.EqualTo(Direction.All));
         }
 
-        [Test]
-        public void OneCell_PassInAValidCell_CellIsValid()
-        {
-            //Arrange
-            var point = new MazePoint(0, 0, 0);
-            var size = new MazeSize { Depth = 1, Height = 1, Width = 1 };
-            //Act
-            var valid = _movementHelper.ValidPoint(point, size);
-            //Assert
-            Assert.That(valid, Is.True);
-        }
-
-        [Test]
-        public void OneCell_PassInAInvalidCellTooLow_CellIsInvalid()
-        {
-            //Arrange
-            var point = new MazePoint(-1, 0, 0);
-            var size = new MazeSize { Depth = 1, Height = 1, Width = 1 };
-            //Act
-            var valid = _movementHelper.ValidPoint(point, size);
-            //Assert
-            Assert.That(valid, Is.False);
-        }
-
-        [Test]
-        public void OneCell_PassInAInvalidCellTooHigh_CellIsInvalid()
-        {
-            //Arrange
-            var point = new MazePoint(1, 0, 0);
-            var size = new MazeSize { Depth = 1, Height = 1, Width = 1 };
-            //Act
-            var valid = _movementHelper.ValidPoint(point, size);
-            //Assert
-            Assert.That(valid, Is.False);
-        }
     }
 }

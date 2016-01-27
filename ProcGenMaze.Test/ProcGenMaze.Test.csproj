@@ -56,7 +56,9 @@
   <ItemGroup>
     <Compile Include="DirectionFlagParserTests.cs" />
     <Compile Include="MovementHelperTests.cs" />
+    <Compile Include="PointValidityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RandomValueTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

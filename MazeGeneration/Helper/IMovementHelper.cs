@@ -10,6 +10,5 @@ namespace MazeGeneration.Helper
         Direction AdjacentPointsFlag(MazePoint p, MazeSize size);
         MazePoint Move(MazePoint start, Direction d, MazeSize size);
         bool CanMove(MazePoint start, Direction d, MazeSize size, out MazePoint final);
-        bool ValidPoint(MazePoint p, MazeSize size);
     }
 }
