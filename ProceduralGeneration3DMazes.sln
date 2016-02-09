@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2015
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProceduralGeneration3DMazes.CSharp", "ProceduralGeneration3DMazes.CSharp.csproj", "{B2B282BB-E53A-D66B-1180-33BAC9014FAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProceduralGeneration3DMazes.CSharp.Editor", "ProceduralGeneration3DMazes.CSharp.Editor.csproj", "{28E3908E-456C-DC5B-C46A-8B8D57B5576B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcGenMaze.Test", "ProcGenMaze.Test\ProcGenMaze.Test.csproj", "{45F7B369-F647-46EA-A156-1160FC570167}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B2B282BB-E53A-D66B-1180-33BAC9014FAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2B282BB-E53A-D66B-1180-33BAC9014FAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2B282BB-E53A-D66B-1180-33BAC9014FAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2B282BB-E53A-D66B-1180-33BAC9014FAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28E3908E-456C-DC5B-C46A-8B8D57B5576B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28E3908E-456C-DC5B-C46A-8B8D57B5576B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28E3908E-456C-DC5B-C46A-8B8D57B5576B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28E3908E-456C-DC5B-C46A-8B8D57B5576B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45F7B369-F647-46EA-A156-1160FC570167}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45F7B369-F647-46EA-A156-1160FC570167}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45F7B369-F647-46EA-A156-1160FC570167}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45F7B369-F647-46EA-A156-1160FC570167}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
