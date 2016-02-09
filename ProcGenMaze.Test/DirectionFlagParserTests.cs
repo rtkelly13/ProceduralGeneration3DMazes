@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using MazeGeneration;
-using MazeGeneration.Helper;
-
+using Assets.GameAssets.Scripts.Maze;
+using Assets.GameAssets.Scripts.Maze.Helper;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
 

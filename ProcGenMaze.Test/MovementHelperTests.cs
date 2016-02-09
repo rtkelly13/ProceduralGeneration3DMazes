@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MazeGeneration;
-using MazeGeneration.Factory;
-using MazeGeneration.Helper;
-using MazeGeneration.Model;
+using Assets.GameAssets.Scripts.Maze;
+using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Helper;
+using Assets.GameAssets.Scripts.Maze.Model;
 using Moq;
 using NUnit.Framework;
 

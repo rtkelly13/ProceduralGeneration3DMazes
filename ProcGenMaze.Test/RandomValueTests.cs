@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using MazeGeneration;
-using MazeGeneration.Factory;
-using MazeGeneration.Helper;
-using MazeGeneration.MazeGeneration;
+using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Helper;
+using Assets.GameAssets.Scripts.Maze.MazeGeneration;
+using Assets.GameAssets.Scripts.Maze.Model;
 using Moq;
 using NUnit.Framework;
 
@@ -24,6 +25,8 @@ namespace ProcGenMaze.Test
         {
             _random = new RandomValueGenerator();
             _mazePointFactory = new Mock<IMazePointFactory>();
+            _mazePointFactory.Setup(x => x.MakePoint(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns((int x, int y, int z) => new MazePoint(x, y, z));
             _randomPoint = new RandomPointGenerator(_random, _mazePointFactory.Object);
         }
 
