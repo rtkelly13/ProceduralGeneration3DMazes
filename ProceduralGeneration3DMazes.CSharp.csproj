@@ -13,11 +13,13 @@
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>Unity Subset v3.5</TargetFrameworkProfile>
-    <CompilerResponseFile></CompilerResponseFile>
+    <CompilerResponseFile>
+    </CompilerResponseFile>
     <UnityProjectType>Game:1</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows:5</UnityBuildTarget>
     <UnityVersion>5.3.1f1</UnityVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -71,6 +73,7 @@
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\MazeSize.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\MazeType.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\ModelFactory.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\AlgorithmsProvider.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\DirectionsFlagParser.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\IDirectionsFlagParser.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\IMovementHelper.cs" />
@@ -94,9 +97,15 @@
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeModel2.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeModel3.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazePoint.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Algorithms.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\AlgorithmsProvider.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\DependencyContainer.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\DependencyResolver.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\DropdownControl.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\DropdownOption.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\GameSetup.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\IAlgorithmsProvider.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\IDependencyResolver.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\MenuUI.cs" />
     <Compile Include="Assets\ProceduralToolkit-master\ArrayE.cs" />
     <Compile Include="Assets\ProceduralToolkit-master\CircularList.cs" />

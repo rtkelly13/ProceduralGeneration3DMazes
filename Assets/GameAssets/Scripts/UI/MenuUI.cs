@@ -9,26 +9,31 @@ namespace Assets.GameAssets.Scripts.UI
     {
         public RectTransform leftPanel;
         public RectTransform rightPanel;
+        private IAlgorithmsProvider _algorithmProvider;
 
-        public 
-            // Use this for initialization
-            void Start () {
-	    
-            }
+        public MenuUI()
+        {
+            var container = DependencyContainer.Container;
+            _algorithmProvider = container.Resolve<IAlgorithmsProvider>();
+        }
+        // Use this for initialization
+        void Start ()
+        {
+            
+
+        }
 
         void Awake()
         {
-            var list = new List<DropdownOption<String, System.Object>>();
-            InstantiateControl<DropdownControl>(leftPanel).Initialise("Algorithms", list, key =>
+            var list = _algorithmProvider.DropdownOptions;
+            InstantiateControl<DropdownControl>(leftPanel).Initialise("Algorithms", list, 0, key =>
             {
                 var algorithmName = key;
+
             });
 
-           
-            InstantiateControl<SliderControl>(leftPanel).Initialize("Cell size", 1, 10, 0, value =>
-            {
-                var test = value;
-            });
+            rightPanel.
+
         }
 	
         // Update is called once per frame
