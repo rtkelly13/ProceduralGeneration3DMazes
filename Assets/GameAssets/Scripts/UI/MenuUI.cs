@@ -1,44 +1,59 @@
 ﻿using System;
 using System.Collections.Generic;
 using Assets.Examples.UI;
+using Assets.GameAssets.Scripts.Maze;
+using Assets.GameAssets.Scripts.UI.Controls;
+using Assets.GameAssets.Scripts.UI.Helper;
 using UnityEngine;
+using Zenject;
 
 namespace Assets.GameAssets.Scripts.UI
 {
-    public class MenuUI : UIBase
+    public class MenuUI : MonoBehaviour
     {
+        private IAlgorithmsProvider _algorithmsProvider;
+        private IResourceLoader _resourceLoader;
         public RectTransform leftPanel;
         public RectTransform rightPanel;
-        private IAlgorithmsProvider _algorithmProvider;
 
         public MenuUI()
         {
-            var container = DependencyContainer.Container;
-            _algorithmProvider = container.Resolve<IAlgorithmsProvider>();
+           
+        }
+
+
+        [PostInject]
+        public void Init(IAlgorithmsProvider algorithmsProvider, IResourceLoader resourceLoader)
+        {
+            _algorithmsProvider = algorithmsProvider;
+            _resourceLoader = resourceLoader;
         }
         // Use this for initialization
         void Start ()
         {
-            
 
         }
 
         void Awake()
         {
-            var list = _algorithmProvider.DropdownOptions;
-            InstantiateControl<DropdownControl>(leftPanel).Initialise("Algorithms", list, 0, key =>
+            var list = _algorithmsProvider.DropdownOptions;
+            _resourceLoader.InstantiateControl<DropdownControl>(leftPanel).Initialise("Algorithms", list, 0, key =>
             {
                 var algorithmName = key;
-
+                rightPanel.Clear();
             });
 
-            rightPanel.
-
+            _resourceLoader.InstantiateControl<TextControl>(rightPanel).Initialize("Test Text");
         }
-	
         // Update is called once per frame
-        void Update () {
-	
+        void Update()
+        {
+            
+        }
+
+        public void Initialize()
+        {
+            
         }
     }
 } 

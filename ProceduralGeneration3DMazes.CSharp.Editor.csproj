@@ -97,6 +97,12 @@
   <ItemGroup>
     <Compile Include="Assets\ProceduralToolkit-master\Editor\MeshFilterExtension.cs" />
     <Compile Include="Assets\ProceduralToolkit-master\Editor\ProceduralToolkitMenu.cs" />
+    <Compile Include="Assets\Zenject\Source\Editor\ObjectGraphVisualizer.cs" />
+    <Compile Include="Assets\Zenject\Source\Editor\SceneCompositionRootEditor.cs" />
+    <Compile Include="Assets\Zenject\Source\Editor\SceneDecoratorCompositionRootEditor.cs" />
+    <Compile Include="Assets\Zenject\Source\Editor\UnityEditorUtil.cs" />
+    <Compile Include="Assets\Zenject\Source\Editor\UnityInspectorListEditor.cs" />
+    <Compile Include="Assets\Zenject\Source\Editor\ZenEditorUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\ProceduralToolkit-master\Shaders\Diffuse Vertex Color.shader" />
@@ -104,6 +110,12 @@
     <None Include="Assets\ProceduralToolkit-master\Shaders\Standard Vertex Color.shader" />
     <None Include="Assets\ProceduralToolkit-master\Shaders\Unlit Color.shader" />
     <None Include="Assets\ProceduralToolkit-master\Shaders\Unlit Vertex Color.shader" />
+    <None Include="Assets\Zenject\LICENSE.txt" />
+    <None Include="Assets\Zenject\OptionalExtras\SampleGame\Media\Fonts\Space.txt" />
+    <None Include="Assets\Zenject\OptionalExtras\SampleGame\Media\Imported\Shaders\AddSmooth_Layer.shader" />
+    <None Include="Assets\Zenject\OptionalExtras\SampleGame\Media\Imported\Shaders\Add_Layer.shader" />
+    <None Include="Assets\Zenject\OptionalExtras\SampleGame\Media\Imported\Shaders\Particle Alpha Blend_IgnoreFog.shader" />
+    <None Include="Assets\Zenject\Version.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>
