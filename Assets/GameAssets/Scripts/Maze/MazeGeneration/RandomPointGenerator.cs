@@ -17,9 +17,9 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
 
         public MazePoint RandomPoint(MazeSize size)
         {
-            var x = _randomValueGenerator.GetNext(0, size.Width - 1);
-            var y = _randomValueGenerator.GetNext(0, size.Height - 1);
-            var z = _randomValueGenerator.GetNext(0, size.Depth - 1);
+            var x = _randomValueGenerator.GetNext(0, size.X - 1);
+            var y = _randomValueGenerator.GetNext(0, size.Y - 1);
+            var z = _randomValueGenerator.GetNext(0, size.Z - 1);
             return _mazePointFactory.MakePoint(x,y,z);
         }
     }

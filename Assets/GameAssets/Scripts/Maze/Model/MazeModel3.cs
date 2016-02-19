@@ -21,10 +21,10 @@ namespace Assets.GameAssets.Scripts.Maze.Model
         {
             Size = size;
             Maze = new Dictionary<MazePoint, MazeCell>();
-            var width = Enumerable.Range(0, size.Width).ToList();
-            var height = Enumerable.Range(0, size.Height).ToList();
-            var depth = Enumerable.Range(0, size.Depth).ToList();
-            foreach (var point in width.SelectMany(x =>  height.SelectMany(y => depth.Select(z => _pointFactory.MakePoint(x, y, z)))))
+            var xValues = Enumerable.Range(0, size.X).ToList();
+            var yValues = Enumerable.Range(0, size.Z).ToList();
+            var zValues = Enumerable.Range(0, size.Y).ToList();
+            foreach (var point in xValues.SelectMany(x =>  yValues.SelectMany(y => zValues.Select(z => _pointFactory.MakePoint(x, y, z)))))
             {
                 Maze.Add(point, new MazeCell
                 {

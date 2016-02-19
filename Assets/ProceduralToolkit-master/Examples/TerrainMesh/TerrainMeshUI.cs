@@ -16,13 +16,13 @@ namespace Assets.Examples.TerrainMesh
 
         private void Awake()
         {
-            InstantiateControl<SliderControl>(leftPanel).Initialize("X size", 1, 20, xSize, value =>
+            InstantiateControl<SliderControl>(leftPanel).Initialize("X Size", 1, 20, xSize, value =>
             {
                 xSize = value;
                 Generate();
             });
 
-            InstantiateControl<SliderControl>(leftPanel).Initialize("Z size", 1, 20, zSize, value =>
+            InstantiateControl<SliderControl>(leftPanel).Initialize("Z Size", 1, 20, zSize, value =>
             {
                 zSize = value;
                 Generate();

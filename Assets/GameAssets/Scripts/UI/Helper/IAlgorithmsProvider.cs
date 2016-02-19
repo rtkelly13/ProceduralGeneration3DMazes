@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Assets.GameAssets.Scripts.UI.Controls;
 
-namespace Assets.GameAssets.Scripts.UI
+namespace Assets.GameAssets.Scripts.UI.Helper
 {
     public interface IAlgorithmsProvider
     {

@@ -17,7 +17,7 @@ namespace Assets.Examples.Khrushchyovka
         {
             Generate();
 
-            InstantiateControl<SliderControl>(leftPanel).Initialize("Width", 10, 30, width, value =>
+            InstantiateControl<SliderControl>(leftPanel).Initialize("X", 10, 30, width, value =>
             {
                 width = value;
                 Generate();

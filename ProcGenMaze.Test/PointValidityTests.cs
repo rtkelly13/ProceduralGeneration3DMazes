@@ -26,7 +26,7 @@ namespace ProcGenMaze.Test
         {
             //Arrange
             var point = new MazePoint(0, 0, 0);
-            var size = new MazeSize { Depth = 1, Height = 1, Width = 1 };
+            var size = new MazeSize { Z = 1, Y = 1, X = 1 };
             //Act
             var valid = _pointValidity.ValidPoint(point, size);
             //Assert
@@ -38,7 +38,7 @@ namespace ProcGenMaze.Test
         {
             //Arrange
             var point = new MazePoint(-1, 0, 0);
-            var size = new MazeSize { Depth = 1, Height = 1, Width = 1 };
+            var size = new MazeSize { Z = 1, Y = 1, X = 1 };
             //Act
             var valid = _pointValidity.ValidPoint(point, size);
             //Assert
@@ -50,7 +50,7 @@ namespace ProcGenMaze.Test
         {
             //Arrange
             var point = new MazePoint(1, 0, 0);
-            var size = new MazeSize { Depth = 1, Height = 1, Width = 1 };
+            var size = new MazeSize { Z = 1, Y = 1, X = 1 };
             //Act
             var valid = _pointValidity.ValidPoint(point, size);
             //Assert

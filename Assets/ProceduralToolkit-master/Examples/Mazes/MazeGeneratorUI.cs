@@ -63,13 +63,13 @@ namespace Assets.Examples.Mazes
                     toggleGroup: algorithmsGroup);
             }
 
-            InstantiateControl<SliderControl>(leftPanel).Initialize("Cell size", 1, 10, cellSize, value =>
+            InstantiateControl<SliderControl>(leftPanel).Initialize("Cell Size", 1, 10, cellSize, value =>
             {
                 cellSize = value;
                 Generate();
             });
 
-            InstantiateControl<SliderControl>(leftPanel).Initialize("Wall size", 1, 10, wallSize, value =>
+            InstantiateControl<SliderControl>(leftPanel).Initialize("Wall Size", 1, 10, wallSize, value =>
             {
                 wallSize = value;
                 Generate();

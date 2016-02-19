@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Assets.GameAssets.Scripts.UI.Controls;
 
-namespace Assets.GameAssets.Scripts.UI
+namespace Assets.GameAssets.Scripts.UI.Helper
 {
     public class AlgorithmsProvider : IAlgorithmsProvider
     {
@@ -11,7 +11,7 @@ namespace Assets.GameAssets.Scripts.UI
         {
             DropdownOptions = new List<DropdownOption <string, Algorithm>>()
             {
-                new DropdownOption<string, Algorithm>("None", Algorithm.GrowingTreeAlgorithm),
+                new DropdownOption<string, Algorithm>("None", Algorithm.None),
                 new DropdownOption<string, Algorithm>("Growing Tree Algorithm", Algorithm.GrowingTreeAlgorithm)
             };
         }

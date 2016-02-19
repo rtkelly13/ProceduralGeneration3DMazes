@@ -34,7 +34,7 @@ namespace ProcGenMaze.Test
         {
             //Arrange
             var point = new MazePoint(0, 0, 0);
-            var size = new MazeSize { Depth = 1, Height = 1, Width = 1};
+            var size = new MazeSize { Z = 1, Y = 1, X = 1};
             //Act
             var directions = _movementHelper.AdjacentPoints(point, size).ToList();
             //Assert
@@ -47,7 +47,7 @@ namespace ProcGenMaze.Test
         {
             //Arrange
             var point = new MazePoint(0, 0, 0);
-            var size = new MazeSize { Depth = 1, Height = 1, Width = 1 };
+            var size = new MazeSize { Z = 1, Y = 1, X = 1 };
             //Act
             var direction = _movementHelper.AdjacentPointsFlag(point, size);
             //Assert
@@ -60,7 +60,7 @@ namespace ProcGenMaze.Test
         {
             //Arrange
             var point = new MazePoint(1, 1, 1);
-            var size = new MazeSize { Depth = 3, Height = 3, Width = 3 };
+            var size = new MazeSize { Z = 3, Y = 3, X = 3 };
             //Act
             var directions = _movementHelper.AdjacentPoints(point, size).ToList();
             //Assert
@@ -83,7 +83,7 @@ namespace ProcGenMaze.Test
                 (Direction seed, Direction d) => seed | d);
 
             var point = new MazePoint(1, 1, 1);
-            var size = new MazeSize { Depth = 3, Height = 3, Width = 3 };
+            var size = new MazeSize { Z = 3, Y = 3, X = 3 };
             //Act
             var direction = _movementHelper.AdjacentPointsFlag(point, size);
             //Assert

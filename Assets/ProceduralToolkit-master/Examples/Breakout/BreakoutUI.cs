@@ -53,7 +53,7 @@ namespace Assets.Examples.Breakout
             });
 
             var ballSizeSlider = InstantiateControl<SliderControl>(leftPanel);
-            ballSizeSlider.Initialize("Ball size", 0.5f, 3f, ballSize, value =>
+            ballSizeSlider.Initialize("Ball Size", 0.5f, 3f, ballSize, value =>
             {
                 ballSize = value;
                 Generate();

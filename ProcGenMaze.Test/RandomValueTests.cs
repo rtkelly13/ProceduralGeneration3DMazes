@@ -60,7 +60,7 @@ namespace ProcGenMaze.Test
             //Arrange
             var size = new MazeSize
             {
-                Width = 10, Depth = 11, Height = 12
+                X = 10, Z = 11, Y = 12
             };
 
             //Act
@@ -78,9 +78,9 @@ namespace ProcGenMaze.Test
             //Arrange
             var size = new MazeSize
             {
-                Width = 10,
-                Depth = 11,
-                Height = 12
+                X = 10,
+                Z = 11,
+                Y = 12
             };
 
             //Act

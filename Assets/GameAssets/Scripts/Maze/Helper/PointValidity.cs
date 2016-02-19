@@ -7,15 +7,15 @@ namespace Assets.GameAssets.Scripts.Maze.Helper
     {
         public bool ValidPoint(MazePoint p, MazeSize size)
         {
-            if (p.X < 0 || p.X > size.Width - 1)
+            if (p.X < 0 || p.X > size.X - 1)
             {
                 return false;
             }
-            if (p.Y < 0 || p.Y > size.Height - 1)
+            if (p.Y < 0 || p.Y > size.Y - 1)
             {
                 return false;
             }
-            if (p.Z < 0 || p.Z > size.Depth - 1)
+            if (p.Z < 0 || p.Z > size.Z - 1)
             {
                 return false;
             }

@@ -21,7 +21,7 @@ namespace Assets.GameAssets.Scripts.Maze.Helper
 
         public IEnumerable<Direction> AdjacentPoints(MazePoint p, MazeSize size)
         {
-            if (p.X < size.Width - 1)
+            if (p.X < size.X - 1)
             {
                 yield return Direction.Right;
             }
@@ -29,22 +29,23 @@ namespace Assets.GameAssets.Scripts.Maze.Helper
             {
                 yield return Direction.Left;
             }
-            if (p.Y < size.Height - 1)
-            {
-                yield return Direction.Up;
-            }
-            if (p.Y > 0)
-            {
-                yield return Direction.Down;
-            }
-            if (p.Z < size.Depth - 1)
+            if (p.Y < size.Y - 1)
             {
                 yield return Direction.Forward;
             }
-            if (p.Z > 0)
+            if (p.Y > 0)
             {
                 yield return Direction.Back;
             }
+            if (p.Z < size.Z - 1)
+            {
+                yield return Direction.Up;
+            }
+            if (p.Z > 0)
+            {
+                yield return Direction.Down;
+            }
+            
         }
 
         public Direction AdjacentPointsFlag(MazePoint p, MazeSize size)
@@ -76,16 +77,16 @@ namespace Assets.GameAssets.Scripts.Maze.Helper
                     final = _pointFactory.MakePoint(start.X - 1, start.Y, start.Z);
                     break;
                 case Direction.Up:
-                    final = _pointFactory.MakePoint(start.X, start.Y + 1, start.Z);
-                    break;
-                case Direction.Down:
-                    final = _pointFactory.MakePoint(start.X, start.Y - 1, start.Z);
-                    break;
-                case Direction.Forward:
                     final = _pointFactory.MakePoint(start.X, start.Y, start.Z + 1);
                     break;
-                case Direction.Back:
+                case Direction.Down:
                     final = _pointFactory.MakePoint(start.X, start.Y, start.Z - 1);
+                    break;
+                case Direction.Forward:
+                    final = _pointFactory.MakePoint(start.X, start.Y + 1, start.Z);
+                    break;
+                case Direction.Back:
+                    final = _pointFactory.MakePoint(start.X, start.Y - 1, start.Z);
                     break;
                 default:
                     throw new ArgumentException("Unsupported movement direction");

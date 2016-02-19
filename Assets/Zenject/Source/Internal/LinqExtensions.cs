@@ -52,7 +52,7 @@ namespace ModestTree
             }
         }
 
-        // These are more efficient than Count() in cases where the size of the collection is not known
+        // These are more efficient than Count() in cases where the Size of the collection is not known
         public static bool HasAtLeast<T>(this IEnumerable<T> enumerable, int amount)
         {
             return enumerable.Take(amount).Count() == amount;
