@@ -8,6 +8,8 @@ using Assets.GameAssets.Scripts.UI.Helper;
 using Assets.GameAssets.Scripts.UI.Menu.Settings;
 using Assets.GameAssets.Scripts.UI.Menu.Validation;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Zenject;
 
@@ -20,18 +22,17 @@ namespace Assets.GameAssets.Scripts.UI.Menu
         public Text validationResult;
         public Button button;
 
-        private AlgorithmSettings _currentSettings;
-
         private IAlgorithmsProvider _algorithmsProvider;
         private IResourceLoader _resourceLoader;
         private ISettingsBuilder _settingsBuilder;
         private IAlgorithmSettingsInitialiser _algorithmSettingsInitialiser;
         private IValidateSettings _validateSettings;
         private IModelOptionsProvider _modelOptionsProvider;
+        private ICurrentSettingsHolder _currentSettingsHolder;
 
         public MenuUI()
         {
-           _currentSettings = new AlgorithmSettings();
+           
         }
 
 
@@ -41,7 +42,8 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             ISettingsBuilder settingsBuilder, 
             IAlgorithmSettingsInitialiser algorithmSettingsInitialiser,
             IValidateSettings validateSettings, 
-            IModelOptionsProvider modelOptionsProvider)
+            IModelOptionsProvider modelOptionsProvider,
+            ICurrentSettingsHolder currentSettingsHolder)
         {
             _algorithmsProvider = algorithmsProvider;
             _resourceLoader = resourceLoader;
@@ -49,6 +51,7 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             _algorithmSettingsInitialiser = algorithmSettingsInitialiser;
             _validateSettings = validateSettings;
             _modelOptionsProvider = modelOptionsProvider;
+            _currentSettingsHolder = currentSettingsHolder;
         }
         // Use this for initialization
         void Start ()
@@ -56,9 +59,18 @@ namespace Assets.GameAssets.Scripts.UI.Menu
 
         }
 
+        public void OnClick()
+        {
+            StaticCurrentSettingsHolder.Settings = _currentSettingsHolder.Settings;
+            SceneManager.LoadScene("Maze");
+        }
+
         void Awake()
         {
-            _currentSettings = new AlgorithmSettings
+
+            button.onClick.AddListener(OnClick);
+
+            _currentSettingsHolder.Settings = new AlgorithmSettings
             {
                 Size = new MazeSize(),
                 Option = ModelOption.None,
@@ -67,28 +79,28 @@ namespace Assets.GameAssets.Scripts.UI.Menu
 
             _resourceLoader.InstantiateControl<DropdownControl>(leftPanel).Initialise("Algorithms", _algorithmsProvider.DropdownOptions, 0, true, InitialiseRightPanel);
 
-            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("X", 0, 100, _currentSettings.Size.X, i =>
+            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("X", 0, 100, _currentSettingsHolder.Settings.Size.X, i =>
             {
-                _currentSettings.Size.X = i;
+                _currentSettingsHolder.Settings.Size.X = i;
                 Validate();
             });
 
-            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Y", 0, 100, _currentSettings.Size.Y, i =>
+            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Y", 0, 100, _currentSettingsHolder.Settings.Size.Y, i =>
             {
-                _currentSettings.Size.Y = i;
+                _currentSettingsHolder.Settings.Size.Y = i;
                 Validate();
             });
 
-            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Z", 0, 100, _currentSettings.Size.Y, i =>
+            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Z", 0, 100, _currentSettingsHolder.Settings.Size.Y, i =>
             {
-                _currentSettings.Size.Z = i;
+                _currentSettingsHolder.Settings.Size.Z = i;
                 Validate();
             });
 
             _resourceLoader.InstantiateControl<DropdownControl>(leftPanel)
                 .Initialise("Model Option", _modelOptionsProvider.DropdownOptions, 0, true,
                     option => {
-                        _currentSettings.Option = option;
+                        _currentSettingsHolder.Settings.Option = option;
                         Validate();
                     });
 
@@ -102,20 +114,20 @@ namespace Assets.GameAssets.Scripts.UI.Menu
 
         private void InitialiseRightPanel(Algorithm algorithm)
         {
-            _currentSettings.Algorithm = algorithm;
+            _currentSettingsHolder.Settings.Algorithm = algorithm;
             Validate();
-            _settingsBuilder.BuildMenu(rightPanelSettings, algorithm, _currentSettings, settings =>
+            _settingsBuilder.BuildMenu(rightPanelSettings, algorithm, _currentSettingsHolder.Settings, settings =>
             {
                 //Settings are updated here from built menu
-                _algorithmSettingsInitialiser.InitialiseOver(settings, _currentSettings);
-                _currentSettings = settings;
+                _algorithmSettingsInitialiser.InitialiseOver(settings, _currentSettingsHolder.Settings);
+                _currentSettingsHolder.Settings = settings;
                 Validate();
             });
         }
 
         private void Validate()
         {
-            var validation = _validateSettings.ValidateAndProcess(_currentSettings);
+            var validation = _validateSettings.ValidateAndProcess(_currentSettingsHolder.Settings);
             validationResult.text = validation.IsValid ? "" : validation.Reason;
             button.enabled = validation.IsValid;
         }

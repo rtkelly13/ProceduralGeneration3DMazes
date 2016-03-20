@@ -13,13 +13,11 @@
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>Unity Subset v3.5</TargetFrameworkProfile>
-    <CompilerResponseFile>
-    </CompilerResponseFile>
+    <CompilerResponseFile></CompilerResponseFile>
     <UnityProjectType>Game:1</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows:5</UnityBuildTarget>
     <UnityVersion>5.3.1f1</UnityVersion>
-    <RootNamespace>
-    </RootNamespace>
+    <RootNamespace></RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -87,10 +85,8 @@
     <Compile Include="Assets\GameAssets\Scripts\Maze\IMaze.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\IMazeCarver.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\IMazeJumper.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\Maze\MazeGeneration\GrowingTreeStrategy.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\IModelOptionsProvider.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\IResourceLoader.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\MazeGeneration\GrowingTreeAlgorithm.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\MazeGeneration\GrowingTreeStrategy.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\MazeGeneration\IRandomPointGenerator.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\MazeGeneration\RandomPointGenerator.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\CellNotFoundException.cs" />
@@ -100,27 +96,32 @@
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeModel2.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeModel3.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazePoint.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\ModelOptionsProvider.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\ResourceLoader.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\MazeUI\MazeInstaller.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Algorithms.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\AlgorithmsProvider.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Controls\DropdownControl.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Controls\DropdownOption.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\AlgorithmsProvider.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Helper\IAlgorithmsProvider.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Installer\Installer.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\IModelOptionsProvider.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\IResourceLoader.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\ModelOptionsProvider.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Helper\ResourceLoader.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\MenuUI.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\AlgorithmSettings.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\AlgorithmSettingsInitialiser.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\CurrentSettingsHolder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\GrowingTree\GrowingTreeSettings.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\GrowingTree\GrowingTreeSettingsBuilder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\GrowingTree\GrowingTreeStrategyStorage.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\GrowingTree\IGrowingTreeStrategyStorage.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\IAlgorithmSettingsInitialiser.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\ICurrentSettingsHolder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\ISettingBuilder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\ISettingsBuilder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\ModelOptions.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\NoneSettingsBuilder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\SettingsBuilder.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\StaticCurrentSettingsHolder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Validation\BaseValidateSettings.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Validation\GrowingTreeAlgorithmValidator.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Validation\IBaseValidateSettings.cs" />
@@ -131,6 +132,7 @@
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Validation\ValidateSettings.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Validation\ValidationResult.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Validation\ValidationRetriever.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\UI\MenuInstaller.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UnityExtenstions.cs" />
     <Compile Include="Assets\ProceduralToolkit-master\ArrayE.cs" />
     <Compile Include="Assets\ProceduralToolkit-master\CircularList.cs" />
@@ -335,6 +337,5 @@
     <None Include="Assets\Zenject\OptionalExtras\SampleGame\Media\Imported\Shaders\Particle Alpha Blend_IgnoreFog.shader" />
     <None Include="Assets\Zenject\Version.txt" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>

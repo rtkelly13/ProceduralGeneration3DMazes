@@ -16,7 +16,7 @@ namespace Assets.GameAssets.Scripts.UI.Helper
             DropdownOptions = new List<DropdownOption<string, ModelOption>>()
             {
                 new DropdownOption<string, ModelOption>("None", ModelOption.None),
-                new DropdownOption<string, ModelOption>("Option", ModelOption.Option1),
+                new DropdownOption<string, ModelOption>("Option 1", ModelOption.Option1),
                 new DropdownOption<string, ModelOption>("Option2", ModelOption.Option3),
                 new DropdownOption<string, ModelOption>("Option3", ModelOption.Option3),
             };

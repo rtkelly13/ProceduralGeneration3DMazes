@@ -4,9 +4,9 @@ using Assets.GameAssets.Scripts.UI.Menu.Settings.GrowingTree;
 using Assets.GameAssets.Scripts.UI.Menu.Validation;
 using Zenject;
 
-namespace Assets.GameAssets.Scripts.UI.Installer
+namespace Assets.GameAssets.Scripts.UI
 {
-    public class Installer: MonoInstaller
+    public class MenuInstaller: MonoInstaller
     {
         public override void InstallBindings()
         {
@@ -27,6 +27,7 @@ namespace Assets.GameAssets.Scripts.UI.Installer
             Container.Bind<IGrowingTreeStrategyStorage>().ToTransient<GrowingTreeStrategyStorage>();
             Container.Bind<IModelOptionsProvider>().ToTransient<ModelOptionsProvider>();
 
+            Container.Bind<ICurrentSettingsHolder>().ToSingle<CurrentSettingsHolder>();
         }
     }
 }
