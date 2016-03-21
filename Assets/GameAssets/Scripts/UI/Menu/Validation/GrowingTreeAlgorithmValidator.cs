@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.UI.Menu.Settings;
 using Assets.GameAssets.Scripts.UI.Menu.Settings.GrowingTree;
 
@@ -18,7 +20,7 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Validation
             AlgorithmType = Algorithm.GrowingTreeAlgorithm;
         }
 
-        public IEnumerable<ValidationResult> ValidateSetting(AlgorithmSettings settings)
+        public IEnumerable<ValidationResult> ValidateSetting(MazeGenerationSettings settings)
         {
             var results = _baseValidateSettings.ValidateSetting(settings);
             foreach (var result in results)

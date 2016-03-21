@@ -29,7 +29,7 @@ namespace Zenject
             var obj = _method(context);
 
             Assert.That(obj != null, () =>
-                "Method provider returned null when looking up type '{0}'. \nObject graph:\n{1}".Fmt(_returnType.Name(), context.GetObjectGraphString()));
+                "Method provider returned null when looking Up type '{0}'. \nObject graph:\n{1}".Fmt(_returnType.Name(), context.GetObjectGraphString()));
 
             return obj;
         }

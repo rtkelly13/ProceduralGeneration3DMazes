@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.UI.Menu.Settings;
 using UnityEngine;
 
@@ -18,7 +20,7 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Validation
             _validationRetriever = validationRetriever;
         }
 
-        public IEnumerable<ValidationResult> Validate(AlgorithmSettings settings)
+        public IEnumerable<ValidationResult> Validate(MazeGenerationSettings settings)
         {
             var validatorStrategy = _validators.SingleOrDefault(x => x.AlgorithmType == settings.Algorithm);
             if (validatorStrategy != null)
@@ -31,7 +33,7 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Validation
             }
         }
 
-        public ValidationResult ValidateAndProcess(AlgorithmSettings settings)
+        public ValidationResult ValidateAndProcess(MazeGenerationSettings settings)
         {
             return _validationRetriever.GetOverallValidationResult(Validate(settings));
         }

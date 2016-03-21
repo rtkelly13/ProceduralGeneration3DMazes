@@ -58,8 +58,8 @@ namespace ProcGenMaze.Test
             //Assert
             Assert.That(allFlags.Count(), Is.EqualTo(2));
 
-            Assert.That(allFlags, Has.Exactly(1).EqualTo(Direction.Up));
-            Assert.That(allFlags, Has.Exactly(1).EqualTo(Direction.Down));
+            Assert.That(allFlags, Has.Exactly(1).EqualTo(Direction.Forward));
+            Assert.That(allFlags, Has.Exactly(1).EqualTo(Direction.Back));
         }
 
         [Test]
@@ -71,8 +71,8 @@ namespace ProcGenMaze.Test
             //Assert
             Assert.That(allFlags.Count(), Is.EqualTo(2));
 
-            Assert.That(allFlags, Has.Exactly(1).EqualTo(Direction.Back));
-            Assert.That(allFlags, Has.Exactly(1).EqualTo(Direction.Forward));
+            Assert.That(allFlags, Has.Exactly(1).EqualTo(Direction.Up));
+            Assert.That(allFlags, Has.Exactly(1).EqualTo(Direction.Down));
         }
 
         [Test]

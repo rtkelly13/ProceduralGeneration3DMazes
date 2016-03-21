@@ -29,23 +29,25 @@ namespace Assets.GameAssets.Scripts.Maze.Helper
             {
                 yield return Direction.Left;
             }
+            
             if (p.Y < size.Y - 1)
-            {
-                yield return Direction.Forward;
-            }
-            if (p.Y > 0)
-            {
-                yield return Direction.Back;
-            }
-            if (p.Z < size.Z - 1)
             {
                 yield return Direction.Up;
             }
-            if (p.Z > 0)
+            if (p.Y > 0)
             {
                 yield return Direction.Down;
             }
-            
+
+            if (p.Z < size.Z - 1)
+            {
+                yield return Direction.Forward;
+            }
+            if (p.Z > 0)
+            {
+                yield return Direction.Back;
+            }
+
         }
 
         public Direction AdjacentPointsFlag(MazePoint p, MazeSize size)

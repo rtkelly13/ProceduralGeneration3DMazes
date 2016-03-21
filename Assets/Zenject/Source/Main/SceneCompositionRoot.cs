@@ -71,7 +71,7 @@ namespace Zenject
             // This file (SceneCompositionRoot) should always have the earliest execution order (see SceneCompositionRoot.cs.meta)
             // This is necessary in some edge cases where parts of Unity do not work the same during Awake() as they do in Start/Update
             // For example, changing rectTransform.localPosition does not automatically update rectTransform.position in some cases
-            // Also, most people treat Awake() as very minimal initialization, such as setting up a valid state for the
+            // Also, most people treat Awake() as very minimal initialization, such as setting Up a valid state for the
             // object, initializing variables, etc. and treat Start() as the place where more complex initialization occurs,
             // so this is consistent with that convention as well
             GlobalCompositionRoot.Instance.InitializeRootIfNecessary();

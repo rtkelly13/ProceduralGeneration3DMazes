@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Assets.Examples.UI;
 using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.UI.Controls;
 using Assets.GameAssets.Scripts.UI.Helper;
 using Assets.GameAssets.Scripts.UI.Menu.Settings;
@@ -70,10 +71,10 @@ namespace Assets.GameAssets.Scripts.UI.Menu
 
             button.onClick.AddListener(OnClick);
 
-            _currentSettingsHolder.Settings = new AlgorithmSettings
+            _currentSettingsHolder.Settings = new MazeGenerationSettings
             {
                 Size = new MazeSize(),
-                Option = ModelOption.None,
+                Option = MazeType.None,
                 Algorithm = Algorithm.None
             };
 

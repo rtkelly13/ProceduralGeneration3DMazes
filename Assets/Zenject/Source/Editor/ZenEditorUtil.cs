@@ -42,7 +42,7 @@ namespace Zenject
                 {
                     if (monoBehaviour == null)
                     {
-                        // fiBackupSceneStorage shows up sometimes for reasons I don't understand
+                        // fiBackupSceneStorage shows Up sometimes for reasons I don't understand
                         // but it's normal so ignore
                         if (curTransform.name != "fiBackupSceneStorage")
                         {
@@ -313,7 +313,7 @@ namespace Zenject
 
             var newRootObjects = UnityUtil.GetRootGameObjects().Except(rootObjectsBefore);
 
-            // Use finally to ensure we clean up the data added from OpenSceneAdditive
+            // Use finally to ensure we clean Up the data added from OpenSceneAdditive
             try
             {
                 var previousBeforeInstallHook = SceneCompositionRoot.BeforeInstallHooks;

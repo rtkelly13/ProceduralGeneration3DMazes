@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.GameAssets.Scripts.Maze.Factory;
 using Assets.GameAssets.Scripts.UI.Controls;
 using Assets.GameAssets.Scripts.UI.Menu.Settings;
 
@@ -9,16 +10,16 @@ namespace Assets.GameAssets.Scripts.UI.Helper
 {
     public class ModelOptionsProvider : IModelOptionsProvider
     { 
-        public List<DropdownOption<string, ModelOption>> DropdownOptions { get; private set; }
+        public List<DropdownOption<string, MazeType>> DropdownOptions { get; private set; }
 
         public ModelOptionsProvider()
         {
-            DropdownOptions = new List<DropdownOption<string, ModelOption>>()
+            DropdownOptions = new List<DropdownOption<string, MazeType>>()
             {
-                new DropdownOption<string, ModelOption>("None", ModelOption.None),
-                new DropdownOption<string, ModelOption>("Option 1", ModelOption.Option1),
-                new DropdownOption<string, ModelOption>("Option2", ModelOption.Option3),
-                new DropdownOption<string, ModelOption>("Option3", ModelOption.Option3),
+                new DropdownOption<string, MazeType>("None", MazeType.None),
+                new DropdownOption<string, MazeType>("Undirected Maze", MazeType.UndirectedMaze),
+                new DropdownOption<string, MazeType>("Directed Maze", MazeType.DirectedMaze),
+                new DropdownOption<string, MazeType>("Dictionary", MazeType.DictionaryMaze),
             };
         }
     }

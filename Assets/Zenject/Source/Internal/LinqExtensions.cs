@@ -215,7 +215,7 @@ namespace ModestTree
             return numRemoved;
         }
 
-        // LINQ already has a method called "Contains" that does the same thing as this
+        // LINQ already Has a method called "Contains" that does the same thing as this
         // BUT it fails to work with Mono 3.5 in some cases.
         // For example the following prints False, True in Mono 3.5 instead of True, True like it should:
         //

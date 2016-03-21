@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Assets.Examples.UI;
+using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.UI.Helper;
 using UnityEngine;
 
@@ -13,7 +15,7 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings
         public Algorithm AlgorithmType { get; private set; }
 
         private readonly IResourceLoader _resourceLoader;
-        private AlgorithmSettings settings;
+        private MazeGenerationSettings settings;
 
         public NoneSettingsBuilder(IResourceLoader resourceLoader)
         {
@@ -21,12 +23,12 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings
             AlgorithmType = Algorithm.None;
         }
 
-        public void BuildMenu(Transform transform, AlgorithmSettings existingSettings, Action<AlgorithmSettings> settingsChanged)
+        public void BuildMenu(Transform transform, MazeGenerationSettings existingSettings, Action<MazeGenerationSettings> settingsChanged)
         {
             settings = existingSettings;
         }
 
-        public AlgorithmSettings GetSettings()
+        public MazeGenerationSettings GetSettings()
         {
             return settings;
         }

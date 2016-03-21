@@ -2,16 +2,27 @@
 {
     public class MazePoint
     {
+        public int X { get; private set; }
+        public int Y { get; private set; }
+        public int Z { get; private set; }
+
         public MazePoint(int x, int y, int z)
+        {
+            Set(x, y, z);
+        }
+
+        public MazePoint()
+        {
+            
+        }
+
+        public MazePoint Set(int x, int y, int z)
         {
             X = x;
             Y = y;
             Z = z;
+            return this;
         }
-
-        public int X { get; private set; }
-        public int Y { get; private set; }
-        public int Z { get; private set; }
 
         protected bool Equals(MazePoint other)
         {

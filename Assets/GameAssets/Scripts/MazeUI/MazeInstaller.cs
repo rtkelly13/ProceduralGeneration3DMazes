@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine;
-using Zenject;
+﻿using Zenject;
 
-namespace Assets.GameAssets.Scripts.Maze
+namespace Assets.GameAssets.Scripts.MazeUI
 {
     public class MazeInstaller : MonoInstaller
     {

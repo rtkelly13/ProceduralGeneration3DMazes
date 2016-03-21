@@ -13,11 +13,13 @@
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>Unity Subset v3.5</TargetFrameworkProfile>
-    <CompilerResponseFile></CompilerResponseFile>
+    <CompilerResponseFile>
+    </CompilerResponseFile>
     <UnityProjectType>Game:1</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows:5</UnityBuildTarget>
     <UnityVersion>5.3.1f1</UnityVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -64,13 +66,12 @@
   <ItemGroup>
     <Compile Include="Assets\GameAssets\Scripts\Maze\Directions.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\IMazeGenerationFactory.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\IMazeModelFactory.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\IMazePointFactory.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\IModelFactory.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\MazeGenerationOptions.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\MazeModelFactory.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\MazePointFactory.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\MazeSize.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\MazeType.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\ModelFactory.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\AlgorithmsProvider.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\DirectionsFlagParser.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\IDirectionsFlagParser.cs" />
@@ -90,13 +91,20 @@
     <Compile Include="Assets\GameAssets\Scripts\Maze\MazeGeneration\IRandomPointGenerator.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\MazeGeneration\RandomPointGenerator.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\CellNotFoundException.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Model\Maze.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeBase.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeCarver.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeCell.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeJumper.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeModel1.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeModel2.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeModel3.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazePoint.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\MazeUI\ImageLoader.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\MazeUI\LoadResourceForFlag.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\MazeUI\Main.cs" />
     <Compile Include="Assets\GameAssets\Scripts\MazeUI\MazeInstaller.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\ObjectPool.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Algorithms.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Controls\DropdownControl.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Controls\DropdownOption.cs" />
@@ -107,10 +115,10 @@
     <Compile Include="Assets\GameAssets\Scripts\UI\Helper\ModelOptionsProvider.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Helper\ResourceLoader.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\MenuUI.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\AlgorithmSettings.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Model\MazeGenerationSettings.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\AlgorithmSettingsInitialiser.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\CurrentSettingsHolder.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\GrowingTree\GrowingTreeSettings.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Model\GrowingTreeSettings.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\GrowingTree\GrowingTreeSettingsBuilder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\GrowingTree\GrowingTreeStrategyStorage.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\GrowingTree\IGrowingTreeStrategyStorage.cs" />
@@ -118,7 +126,6 @@
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\ICurrentSettingsHolder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\ISettingBuilder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\ISettingsBuilder.cs" />
-    <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\ModelOptions.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\NoneSettingsBuilder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\SettingsBuilder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Settings\StaticCurrentSettingsHolder.cs" />
@@ -134,6 +141,7 @@
     <Compile Include="Assets\GameAssets\Scripts\UI\Menu\Validation\ValidationRetriever.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UI\MenuInstaller.cs" />
     <Compile Include="Assets\GameAssets\Scripts\UnityExtenstions.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\MazeUI\MazeCellPrefab.cs" />
     <Compile Include="Assets\ProceduralToolkit-master\ArrayE.cs" />
     <Compile Include="Assets\ProceduralToolkit-master\CircularList.cs" />
     <Compile Include="Assets\ProceduralToolkit-master\ColorE.cs" />

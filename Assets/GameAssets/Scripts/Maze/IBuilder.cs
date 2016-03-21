@@ -7,7 +7,5 @@ namespace Assets.GameAssets.Scripts.Maze
     {
         void PlaceVertex(MazePoint p, Direction d);
         void RemoveVertex(MazePoint p, Direction d);
-
-        void BaseInitialise(MazeSize size, bool allVertexes);
     }
 }

@@ -16,8 +16,8 @@ namespace Assets.GameAssets.Scripts.Maze
         Back = 16,
         Forward = 32,
         XAxis = Left | Right,
-        YAxis = Down | Up,
-        ZAxis = Back | Forward,
+        YAxis = Back | Forward,
+        ZAxis = Down | Up,
         All = Left | Right | Down | Up | Back | Forward
     }
 }

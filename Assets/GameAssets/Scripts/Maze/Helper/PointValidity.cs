@@ -11,10 +11,12 @@ namespace Assets.GameAssets.Scripts.Maze.Helper
             {
                 return false;
             }
+
             if (p.Y < 0 || p.Y > size.Y - 1)
             {
                 return false;
             }
+
             if (p.Z < 0 || p.Z > size.Z - 1)
             {
                 return false;

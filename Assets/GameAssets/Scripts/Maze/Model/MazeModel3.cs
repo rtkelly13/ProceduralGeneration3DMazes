@@ -17,7 +17,7 @@ namespace Assets.GameAssets.Scripts.Maze.Model
             _movementHelper = movementHelper;
         }
 
-        protected override void Initialise(MazeSize size, bool allVertexes)
+        protected override void Initialise(MazeSize size)
         {
             Size = size;
             Maze = new Dictionary<MazePoint, MazeCell>();
@@ -33,7 +33,7 @@ namespace Assets.GameAssets.Scripts.Maze.Model
             }
         }
 
-        public void PlaceVertex(MazePoint p, Direction d)
+        public override void PlaceVertex(MazePoint p, Direction d)
         {
             MazeCell startCell;
             MazePoint final;
@@ -46,7 +46,7 @@ namespace Assets.GameAssets.Scripts.Maze.Model
             }
         }
 
-        public void RemoveVertex(MazePoint p, Direction d)
+        public override void RemoveVertex(MazePoint p, Direction d)
         {
             MazeCell startCell;
             MazePoint final;
@@ -57,6 +57,11 @@ namespace Assets.GameAssets.Scripts.Maze.Model
                 finalCell.Directions = FlagParser.RemoveDirectionsFromFlag(finalCell.Directions,
                     FlagParser.OppositeDirection(d));
             }
+        }
+
+        public override bool HasDirections(MazePoint p, Direction d)
+        {
+            return FlagParser.FlagHasDirections(GetFlagFromPoint(p), d);
         }
 
         public override Direction GetFlagFromPoint(MazePoint p)

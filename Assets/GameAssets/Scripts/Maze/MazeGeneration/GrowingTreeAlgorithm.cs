@@ -19,7 +19,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             _directionsFlagParser = directionsFlagParser;
         }
 
-        public void GenerateMaze(List<GrowingTreeStrategy> strategies, IMazeCarver initialisedMaze)
+        public IMaze GenerateMaze(List<GrowingTreeStrategy> strategies, IMazeCarver initialisedMaze)
         {
             var randomPoint = _randomPointGenerator.RandomPoint(initialisedMaze.Size);
             var activeCells = new List<MazePoint> { randomPoint };
@@ -45,9 +45,10 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                 }
                 activeCells.Remove(currentPoint);
             }
+            return initialisedMaze;
         }
 
-        public MazePoint GetNextPoint(List<MazePoint> activeCells, List<GrowingTreeStrategy> strategies)
+        private MazePoint GetNextPoint(List<MazePoint> activeCells, List<GrowingTreeStrategy> strategies)
         {
             var item = _randomValueGenerator.GetNext(0, strategies.Count - 1);
             var strategy = strategies[item];

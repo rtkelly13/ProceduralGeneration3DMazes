@@ -11,5 +11,7 @@ namespace Assets.GameAssets.Scripts.Maze.Helper
         Direction OppositeDirection(Direction d);
 
         bool IsDirection(Direction flag);
+
+        List<Direction> Directions { get; }
     }
 }

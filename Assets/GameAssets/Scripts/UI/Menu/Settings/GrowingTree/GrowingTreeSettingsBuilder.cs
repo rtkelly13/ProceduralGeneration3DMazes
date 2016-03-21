@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Examples.UI;
+using Assets.GameAssets.Scripts.Maze.Factory;
 using Assets.GameAssets.Scripts.Maze.MazeGeneration;
+using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.UI.Helper;
 using UnityEngine;
 
@@ -25,12 +27,12 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings.GrowingTree
             AlgorithmType = Algorithm.GrowingTreeAlgorithm;
         }
 
-        public AlgorithmSettings GetSettings()
+        public MazeGenerationSettings GetSettings()
         {
             return _growingTreeSettings;
         }
 
-        public void BuildMenu(Transform transform, AlgorithmSettings existingSettings, Action<AlgorithmSettings> settingsChanged)
+        public void BuildMenu(Transform transform, MazeGenerationSettings existingSettings, Action<MazeGenerationSettings> settingsChanged)
         {
             _growingTreeSettings = existingSettings as GrowingTreeSettings ?? new GrowingTreeSettings();
             _growingTreeSettings.Strategies = _growingTreeSettings.Strategies ?? new List<GrowingTreeStrategy>();
@@ -74,7 +76,7 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings.GrowingTree
             settingsChanged(GetSettings());
         }
 
-        private void StrategyChanged(GrowingTreeStrategy strategy, int sum, Action<AlgorithmSettings> settingsChanged)
+        private void StrategyChanged(GrowingTreeStrategy strategy, int sum, Action<MazeGenerationSettings> settingsChanged)
         {
             _growingTreeStrategyStorage.AddOrUpdate(strategy, sum);
             _growingTreeSettings.Strategies = _growingTreeStrategyStorage.GetAllStrategies().ToList();

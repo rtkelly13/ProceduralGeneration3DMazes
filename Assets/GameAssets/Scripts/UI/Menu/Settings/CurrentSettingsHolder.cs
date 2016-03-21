@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Model;
 
 namespace Assets.GameAssets.Scripts.UI.Menu.Settings
 {
     public class CurrentSettingsHolder : ICurrentSettingsHolder
     {
-        public AlgorithmSettings Settings { get; set; }
+        public MazeGenerationSettings Settings { get; set; }
     }
 }

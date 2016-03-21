@@ -453,7 +453,7 @@ namespace Zenject
             }
         }
 
-        // Try looking up a single provider for a given context
+        // Try looking Up a single provider for a given context
         // Note that this method should not throw zenject exceptions
         internal ProviderLookupResult TryGetUniqueProvider(
             InjectContext context, out ProviderBase provider)
@@ -470,7 +470,7 @@ namespace Zenject
             if (providers.Count > 1)
             {
                 // If we find multiple providers and we are looking for just one, then
-                // try to intelligently choose one from the list before giving up
+                // try to intelligently choose one from the list before giving Up
 
                 // First try picking the most 'local' dependencies
                 // This will bias towards bindings for the lower level specific containers rather than the global high level container
@@ -487,7 +487,7 @@ namespace Zenject
                 }
                 else
                 {
-                    // Try choosing the one with a condition before giving up and throwing an exception
+                    // Try choosing the one with a condition before giving Up and throwing an exception
                     // This is nice because it allows us to bind a default and then override with conditions
                     provider = sortedProviders.Select(x => x.Pair.Provider).Where(x => x.Condition != null).OnlyOrDefault();
 
@@ -559,7 +559,7 @@ namespace Zenject
             {
                 var lookupId = new LookupId(provider, context.BindingId);
 
-                // Allow one before giving up so that you can do circular dependencies via postinject or fields
+                // Allow one before giving Up so that you can do circular dependencies via postinject or fields
                 if (_resolvesInProgress.Where(x => x.Equals(lookupId)).Count() > 1)
                 {
                     throw new ZenjectResolveException(
@@ -1602,7 +1602,7 @@ namespace Zenject
                 {
                     var lookupId = new LookupId(provider, context.BindingId);
 
-                    // Allow one before giving up so that you can do circular dependencies via postinject or fields
+                    // Allow one before giving Up so that you can do circular dependencies via postinject or fields
                     if (_resolvesInProgress.Where(x => x.Equals(lookupId)).Count() > 1)
                     {
                         yield return new ZenjectResolveException(

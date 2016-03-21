@@ -2,8 +2,9 @@
 {
     public enum MazeType
     {
-        UndirectedMaze = 0,
-        DirectedMaze = 1,
-        DictionaryMaze = 2
+        None = 0,
+        UndirectedMaze = 1,
+        DirectedMaze = 2,
+        DictionaryMaze = 3
     }
 }

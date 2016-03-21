@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Model;
 using UnityEngine;
 
 namespace Assets.GameAssets.Scripts.UI.Menu.Settings
@@ -14,13 +16,13 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings
             _settingsBuilders = settingsBuilders;
         }
 
-        public void BuildMenu(Transform transform, Algorithm algorithm, AlgorithmSettings existingSettings, Action<AlgorithmSettings> settingsChanged)
+        public void BuildMenu(Transform transform, Algorithm algorithm, MazeGenerationSettings existingSettings, Action<MazeGenerationSettings> settingsChanged)
         {
             transform.Clear();
             GetStrategy(algorithm).BuildMenu(transform, existingSettings, settingsChanged);
         }
 
-        public AlgorithmSettings GetSettings(Algorithm algorithm)
+        public MazeGenerationSettings GetSettings(Algorithm algorithm)
         {
             return GetStrategy(algorithm).GetSettings();
         }

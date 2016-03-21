@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using Assets.GameAssets.Scripts.Maze.Factory;
 using Assets.GameAssets.Scripts.Maze.Helper;
 
 namespace Assets.GameAssets.Scripts.Maze.Model
 {
-    public abstract class MazeBase
+    public abstract class MazeBase: IBuilder
     {
         protected readonly IDirectionsFlagParser FlagParser;
 
@@ -18,6 +19,8 @@ namespace Assets.GameAssets.Scripts.Maze.Model
             return FlagParser.FlagHasDirections(GetFlagFromPoint(p), flag);
         }
 
+        public abstract bool HasDirections(MazePoint p, Direction d);
+
         public abstract Direction GetFlagFromPoint(MazePoint p);
 
         public IEnumerable<Direction> GetsDirectionsFromPoint(MazePoint p)
@@ -25,13 +28,17 @@ namespace Assets.GameAssets.Scripts.Maze.Model
             return FlagParser.SplitDirectionsFromFlag(GetFlagFromPoint(p));
         }
 
-        public void BaseInitialise(MazeSize size, bool allVertexes)
+        public abstract void PlaceVertex(MazePoint p, Direction d);
+        public abstract void RemoveVertex(MazePoint p, Direction d);
+
+        public MazeBase BaseInitialise(MazeSize size)
         {
             Size = size;
-            Initialise(size, allVertexes);
+            Initialise(size);
+            return this;
         }
 
-        protected abstract void Initialise(MazeSize size, bool allVertexes);
+        protected abstract void Initialise(MazeSize size);
 
         public MazeSize Size { get; set; }
     }

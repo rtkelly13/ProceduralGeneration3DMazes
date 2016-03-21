@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Assets.GameAssets.Scripts.Maze.Factory;
 using Assets.GameAssets.Scripts.Maze.Helper;
 
@@ -18,7 +19,7 @@ namespace Assets.GameAssets.Scripts.Maze.Model
         }
 
 
-        protected override void Initialise(MazeSize size, bool allVertexes)
+        protected override void Initialise(MazeSize size)
         {
             Size = size;
             Maze = new MazeCell[size.X, size.Z, size.Y];
@@ -34,7 +35,7 @@ namespace Assets.GameAssets.Scripts.Maze.Model
             }
         }
 
-        public void PlaceVertex(MazePoint p, Direction d)
+        public override void PlaceVertex(MazePoint p, Direction d)
         {
             MazePoint finalPoint;
             if (_movementHelper.CanMove(p, d, Size, out finalPoint))
@@ -55,11 +56,13 @@ namespace Assets.GameAssets.Scripts.Maze.Model
                         cell.Directions = FlagParser.AddDirectionsToFlag(cell.Directions,
                         FlagParser.OppositeDirection(d));
                         break;
+                    default:
+                        throw new ArgumentException(String.Format("Flag not supported: {0}", d));
                 }
             }
         }
 
-        public void RemoveVertex(MazePoint p, Direction d)
+        public override void RemoveVertex(MazePoint p, Direction d)
         {
             MazePoint finalPoint;
             if (_movementHelper.CanMove(p, d, Size, out finalPoint))
@@ -80,8 +83,30 @@ namespace Assets.GameAssets.Scripts.Maze.Model
                         cell.Directions = FlagParser.RemoveDirectionsFromFlag(cell.Directions,
                         FlagParser.OppositeDirection(d));
                         break;
+                    default:
+                        throw new ArgumentException(String.Format("Flag not supported: {0}", d));
                 }
             }
+        }
+
+        public override bool HasDirections(MazePoint p, Direction d)
+        {
+            return FlagParser.SplitDirectionsFromFlag(d).All(x =>
+            {
+                switch (x)
+                {
+                    case Direction.Left:
+                    case Direction.Up:
+                    case Direction.Forward:
+                        return FlagParser.FlagHasDirections(Maze[p.X, p.Y, p.Z].Directions, x);
+                    case Direction.Right:
+                    case Direction.Down:
+                    case Direction.Back:
+                        return FlagParser.FlagHasDirections(HasVertexInDirection(p, x), x);
+                    default:
+                        throw new ArgumentException(String.Format("Flag not supported: {0}", d));
+                }
+            });
         }
 
         public override Direction GetFlagFromPoint(MazePoint p)

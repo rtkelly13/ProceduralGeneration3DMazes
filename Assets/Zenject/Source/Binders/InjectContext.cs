@@ -51,7 +51,7 @@ namespace Zenject
         // When optional, null is a valid value to be returned
         public readonly bool Optional;
 
-        // When set to true, this will only look up dependencies in the local container and will not
+        // When set to true, this will only look Up dependencies in the local container and will not
         // search in parent containers
         public readonly bool LocalOnly;
 
@@ -147,7 +147,7 @@ namespace Zenject
         }
 
         // This will return the types of all the objects that are being injected
-        // So if you have class Foo which has constructor parameter of type IBar,
+        // So if you have class Foo which Has constructor parameter of type IBar,
         // and IBar resolves to Bar, this will be equal to (Bar, Foo)
         public IEnumerable<Type> AllObjectTypes
         {
