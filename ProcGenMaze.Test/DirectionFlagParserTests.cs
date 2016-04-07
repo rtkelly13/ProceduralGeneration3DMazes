@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Security.Policy;
 using Assets.GameAssets.Scripts.Maze;
 using Assets.GameAssets.Scripts.Maze.Helper;
+using Assets.GameAssets.Scripts.Maze.Model;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;
 
@@ -219,6 +221,19 @@ namespace ProcGenMaze.Test
         }
 
         [Test]
+        public void LeftFlag_DoesNotHavUpDirection_False()
+        {
+            //Arrange
+            var left = Direction.Left;
+
+            //Act
+            var result = _flagParser.FlagHasDirections(left, Direction.Up);
+
+            //Assery
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
         public void LeftDirection_IsDirection_True()
         {
             //Arrange
@@ -244,5 +259,95 @@ namespace ProcGenMaze.Test
             Assert.That(result, Is.False);
         }
 
+        [Test]
+        public void XAxis_RemoveLeft_RightFlag()
+        {
+            //Arrange
+            var xAxis = Direction.XAxis;
+
+            //Act
+            var result = _flagParser.RemoveDirectionsFromFlag(xAxis, Direction.Left);
+
+            //Assert
+            Assert.That(result, Is.EqualTo(Direction.Right));
+        }
+
+        [Test]
+        public void AllFlag_RemoveLeft_RightYAxisAndZAxis()
+        {
+            //Arrange
+            var all = Direction.All;
+
+            //Act
+            var result = _flagParser.RemoveDirectionsFromFlag(all, Direction.Left);
+
+            //Assert
+            Assert.That(result, Is.EqualTo(Direction.Right | Direction.YAxis | Direction.ZAxis));
+        }
+
+        [Test]
+        public void AllFlag_OppositeFlag_NoneFlag()
+        {
+            //Arrange
+            var all = Direction.All;
+
+            //Act
+            var result = _flagParser.OppositeFlag(all);
+
+            //Assert
+            Assert.That(result, Is.EqualTo(Direction.None));
+        }
+
+        [Test]
+        public void XAxis_OppositeFlag_YAxisAndZAxis()
+        {
+            //Arrange
+            var all = Direction.XAxis;
+
+            //Act
+            var result = _flagParser.OppositeFlag(all);
+
+            //Assert
+            Assert.That(result, Is.EqualTo(Direction.YAxis | Direction.ZAxis));
+        }
+
+        [Test]
+        public void Left_OppositeFlag_RightYAxisAndZAxis()
+        {
+            //Arrange
+            var all = Direction.Left;
+
+            //Act
+            var result = _flagParser.OppositeFlag(all);
+
+            //Assert
+            Assert.That(result, Is.EqualTo(Direction.Right | Direction.YAxis | Direction.ZAxis));
+        }
+
+        [Test]
+        public void XAxisAndYAxis_RemoveLeftDirectionsFromFlag_RightYAxisRemaining()
+        {
+            //Arrange
+            var flag = Direction.XAxis | Direction.YAxis;
+
+            //Act
+            var result = _flagParser.RemoveDirectionsFromFlag(flag, Direction.Left);
+
+            //Assert
+            Assert.That(result, Is.EqualTo(Direction.Right | Direction.YAxis));
+        }
+
+        [Test]
+        public void XAxisAndYAxis_RemoveXAxisDirectionsFromFlag_YAxisRemaining()
+        {
+            //Arrange
+            var flag = Direction.XAxis | Direction.YAxis;
+
+            //Act
+            var result = _flagParser.RemoveDirectionsFromFlag(flag, Direction.XAxis);
+
+            //Assert
+            Assert.That(result, Is.EqualTo(Direction.YAxis));
+        }
     }
 }

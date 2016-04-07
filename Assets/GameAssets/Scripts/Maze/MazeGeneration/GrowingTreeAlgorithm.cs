@@ -6,7 +6,7 @@ using Assets.GameAssets.Scripts.Maze.Model;
 
 namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
 {
-    public class GrowingTreeAlgorithm
+    public class GrowingTreeAlgorithm : IGrowingTreeAlgorithm
     {
         private readonly IRandomPointGenerator _randomPointGenerator;
         private readonly IRandomValueGenerator _randomValueGenerator;
@@ -19,31 +19,45 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             _directionsFlagParser = directionsFlagParser;
         }
 
-        public IMaze GenerateMaze(List<GrowingTreeStrategy> strategies, IMazeCarver initialisedMaze)
+        public IMazeCarver GenerateMaze(IMazeCarver initialisedMaze, MazeGenerationSettings settings)
+        {
+            var growingTreeSettings = settings as GrowingTreeSettings;
+            if (growingTreeSettings == null)
+            {
+                throw new ArgumentException("The correct settings are not present");
+            }
+            return GenerateMaze(initialisedMaze, growingTreeSettings.Strategies);
+        }
+
+        private IMazeCarver GenerateMaze(IMazeCarver initialisedMaze, List<GrowingTreeStrategy> strategies)
         {
             var randomPoint = _randomPointGenerator.RandomPoint(initialisedMaze.Size);
             var activeCells = new List<MazePoint> { randomPoint };
-            while (!activeCells.Any())
+            while (activeCells.Any())
             {
                 var currentPoint = GetNextPoint(activeCells, strategies);
                 initialisedMaze.JumpToPoint(currentPoint);
-                var carvableDirections = initialisedMaze.CarvableDirections().Randomise();
+                var carvableDirections = initialisedMaze.CarvableDirections().ToList();
+                carvableDirections.Shuffle();
+                var carved = false;
                 foreach (var direction in carvableDirections)
                 {
-                    if (initialisedMaze.TryJumpInDirection(direction))
+                    initialisedMaze.JumpInDirection(direction);
+                    var carvedDirections = initialisedMaze.AlreadyCarvedDirections();
+                    if (!carvedDirections.Any())
                     {
-                        var k = initialisedMaze.AlreadyCarvedDirections();
-                        if (!k.Any())
-                        {
-                            var oppositeDirection = _directionsFlagParser.OppositeDirection(direction);
-                            initialisedMaze.CarveInDirection(oppositeDirection);
-                            activeCells.Add(initialisedMaze.CurrentPoint);
-                            break;
-                        }
+                        var oppositeDirection = _directionsFlagParser.OppositeDirection(direction);
+                        initialisedMaze.CarveInDirection(oppositeDirection);
+                        activeCells.Add(initialisedMaze.CurrentPoint);
+                        carved = true;
+                        break;
                     }
                     initialisedMaze.JumpToPoint(currentPoint);
                 }
-                activeCells.Remove(currentPoint);
+                if (!carved)
+                {
+                    activeCells.Remove(currentPoint);
+                }
             }
             return initialisedMaze;
         }
@@ -55,19 +69,19 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             var middle = activeCells.Count / 2;
             switch (strategy)
             {
-                case GrowingTreeStrategy.First:
+                case GrowingTreeStrategy.Oldest:
                     return activeCells.First();
-                case GrowingTreeStrategy.Last:
+                case GrowingTreeStrategy.Newest:
                     return activeCells.Last();
                 case GrowingTreeStrategy.Middle:
                     return activeCells[middle];
                 case GrowingTreeStrategy.Random:
                     var randomIndex = _randomValueGenerator.GetNext(0, activeCells.Count - 1);
                     return activeCells[randomIndex];
-                case GrowingTreeStrategy.RandomFirst:
+                case GrowingTreeStrategy.RandomOldest:
                     var randomFirstIndex = _randomValueGenerator.GetNext(middle, activeCells.Count - 1);
                     return activeCells[randomFirstIndex];
-                case GrowingTreeStrategy.RandomLast:
+                case GrowingTreeStrategy.RandomNewest:
                     var randomLastIndex = _randomValueGenerator.GetNext(0, middle);
                     return activeCells[randomLastIndex];
                 default:

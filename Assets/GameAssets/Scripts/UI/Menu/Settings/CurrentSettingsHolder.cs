@@ -9,6 +9,12 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings
 {
     public class CurrentSettingsHolder : ICurrentSettingsHolder
     {
-        public MazeGenerationSettings Settings { get; set; }
+        private static MazeGenerationSettings _settings;
+
+        public MazeGenerationSettings Settings
+        {
+            get { return _settings; }
+            set { _settings = value; }
+        }
     }
 }

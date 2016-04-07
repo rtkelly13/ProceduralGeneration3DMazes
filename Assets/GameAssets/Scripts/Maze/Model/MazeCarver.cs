@@ -8,48 +8,60 @@ namespace Assets.GameAssets.Scripts.Maze.Model
 {
     public class MazeCarver: MazeJumper, IMazeCarver
     {
-        public MazeCarver(MazeSize size, MazePoint startingPoint) : base(size, startingPoint)
-        {
-        }
-
         public IEnumerable<Direction> CarvableDirections()
         {
-            throw new NotImplementedException();
+            return DirectionsFlagParser.SplitDirectionsFromFlag(CarvableFlag());
         }
 
         public Direction CarvableFlag()
         {
-            throw new NotImplementedException();
+            var jumpableFlag = JumpableFlag();
+            var flag = GetFlagFromPoint();
+            var carvableFlag = DirectionsFlagParser.FlagUnion(jumpableFlag, DirectionsFlagParser.OppositeFlag(flag));
+            return carvableFlag;
         }
 
         public IEnumerable<Direction> AlreadyCarvedDirections()
         {
-            throw new NotImplementedException();
+            return GetsDirectionsFromPoint();
         }
 
         public Direction AlreadyCarvedFlag()
         {
-            throw new NotImplementedException();
+            return GetFlagFromPoint();
         }
 
         public bool CanCarveInDirection(Direction d)
         {
-            throw new NotImplementedException();
+            return DirectionsFlagParser.FlagHasDirections(CarvableFlag(), d);
         }
 
         public void CarveInDirection(Direction d)
         {
-            throw new NotImplementedException();
+            if (CanCarveInDirection(d))
+            {
+                ModelsWrapper.ModelBuilder.PlaceVertex(CurrentPoint, d);
+            }
+        }
+
+        public void FillInDirection(Direction d)
+        {
+            if (CanMoveInDirection(d))
+            {
+                ModelsWrapper.ModelBuilder.RemoveVertex(CurrentPoint, d);
+            }
         }
 
         public bool AlreadyCarvedDirection(Direction d)
         {
-            throw new NotImplementedException();
+            return DirectionsFlagParser.FlagHasDirections(GetFlagFromPoint(), d);
         }
 
         public IMazeJumper CarvingFinished()
         {
-            throw new NotImplementedException();
-        }
+            var jumper = new MazeJumper();
+            jumper.Initialise(ModelsWrapper, DirectionsFlagParser, MovementHelper,PointValidity, RandomPointGenerator, CurrentPoint);
+            return jumper;
+        } 
     }
 }

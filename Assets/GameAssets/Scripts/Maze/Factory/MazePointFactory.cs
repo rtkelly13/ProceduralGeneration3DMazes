@@ -1,22 +1,16 @@
-﻿using Assets.GameAssets.Scripts.Maze.Model;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Assets.GameAssets.Scripts.Maze.Model;
 
 namespace Assets.GameAssets.Scripts.Maze.Factory
 {
-    public class MazePointFactory : IMazePointFactory
+    public class MazePointFactory: IMazePointFactory
     {
-        private readonly ObjectPool<MazePoint> pool; 
-        public MazePointFactory()
-        {
-            pool = new ObjectPool<MazePoint>(5);
-        }
         public MazePoint MakePoint(int x, int y, int z)
         {
-            return pool.New().Set(x, y, z);
-        }
-
-        public void Store(MazePoint p)
-        {
-            pool.Store(p);
+            return new MazePoint(x, y, z);
         }
     }
 }

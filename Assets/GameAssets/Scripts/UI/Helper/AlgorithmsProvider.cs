@@ -12,7 +12,9 @@ namespace Assets.GameAssets.Scripts.UI.Helper
             DropdownOptions = new List<DropdownOption <string, Algorithm>>()
             {
                 new DropdownOption<string, Algorithm>("None", Algorithm.None),
-                new DropdownOption<string, Algorithm>("Growing Tree Algorithm", Algorithm.GrowingTreeAlgorithm)
+                new DropdownOption<string, Algorithm>("Growing Tree Algorithm", Algorithm.GrowingTreeAlgorithm),
+                new DropdownOption<string, Algorithm>("Recursive Backtracker", Algorithm.RecursiveBacktrackerAlgorithm),
+                new DropdownOption<string, Algorithm>("Binary Tree Algorithm", Algorithm.BinaryTreeAlgorithm)
             };
         }
         

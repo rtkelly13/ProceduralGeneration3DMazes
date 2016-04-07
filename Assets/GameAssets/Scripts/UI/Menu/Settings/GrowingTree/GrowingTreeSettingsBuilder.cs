@@ -44,14 +44,14 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings.GrowingTree
             _resourceLoader.InstantiateControl<TextControl>(transform).Initialize("Cell selection weighting: the action will be randomly chosen ");
 
             _resourceLoader.InstantiateControl<SliderControl>(transform)
-                .Initialize("First", 0, 10,
-                _growingTreeStrategyStorage.Get(GrowingTreeStrategy.First), 
-                i => StrategyChanged(GrowingTreeStrategy.First, i, settingsChanged));
+                .Initialize("Oldest", 0, 10,
+                _growingTreeStrategyStorage.Get(GrowingTreeStrategy.Oldest), 
+                i => StrategyChanged(GrowingTreeStrategy.Oldest, i, settingsChanged));
 
             _resourceLoader.InstantiateControl<SliderControl>(transform)
-                .Initialize("Last", 0, 10,
-                _growingTreeStrategyStorage.Get(GrowingTreeStrategy.Last),
-                i => StrategyChanged(GrowingTreeStrategy.Last, i, settingsChanged));
+                .Initialize("Newest", 0, 10,
+                _growingTreeStrategyStorage.Get(GrowingTreeStrategy.Newest),
+                i => StrategyChanged(GrowingTreeStrategy.Newest, i, settingsChanged));
 
             _resourceLoader.InstantiateControl<SliderControl>(transform)
                 .Initialize("Middle", 0, 10,
@@ -64,14 +64,14 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings.GrowingTree
                 i => StrategyChanged(GrowingTreeStrategy.Random, i, settingsChanged));
 
             _resourceLoader.InstantiateControl<SliderControl>(transform)
-                .Initialize("Random First Half", 0, 10,
-                _growingTreeStrategyStorage.Get(GrowingTreeStrategy.RandomFirst),
-                i => StrategyChanged(GrowingTreeStrategy.RandomFirst, i, settingsChanged));
+                .Initialize("Random Oldest Half", 0, 10,
+                _growingTreeStrategyStorage.Get(GrowingTreeStrategy.RandomOldest),
+                i => StrategyChanged(GrowingTreeStrategy.RandomOldest, i, settingsChanged));
 
             _resourceLoader.InstantiateControl<SliderControl>(transform)
-                .Initialize("Random Last Half", 0, 10,
-                _growingTreeStrategyStorage.Get(GrowingTreeStrategy.RandomLast),
-                i => StrategyChanged(GrowingTreeStrategy.RandomLast, i, settingsChanged));
+                .Initialize("Random Newest Half", 0, 10,
+                _growingTreeStrategyStorage.Get(GrowingTreeStrategy.RandomNewest),
+                i => StrategyChanged(GrowingTreeStrategy.RandomNewest, i, settingsChanged));
 
             settingsChanged(GetSettings());
         }

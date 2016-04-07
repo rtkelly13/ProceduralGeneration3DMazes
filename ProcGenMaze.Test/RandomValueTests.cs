@@ -64,7 +64,7 @@ namespace ProcGenMaze.Test
             };
 
             //Act
-            var point = _randomPoint.RandomPoint(size);
+            var point = _randomPoint.RandomPoint(size, PickType.Random);
 
             //Assert
             Assert.That(point.X, Is.InRange(1, 10));
@@ -84,7 +84,7 @@ namespace ProcGenMaze.Test
             };
 
             //Act
-            var points = Enumerable.Range(0, 100).Select(x => _randomPoint.RandomPoint(size));
+            var points = Enumerable.Range(0, 100).Select(x => _randomPoint.RandomPoint(size, PickType.Random));
 
             //Assert
             foreach (var point in points)

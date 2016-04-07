@@ -5,6 +5,6 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
 {
     public interface IRandomPointGenerator
     {
-        MazePoint RandomPoint(MazeSize size);
+        MazePoint RandomPoint(MazeSize size, PickType type = PickType.Random);
     }
 }

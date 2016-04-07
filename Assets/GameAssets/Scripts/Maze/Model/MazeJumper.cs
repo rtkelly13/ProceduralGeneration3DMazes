@@ -1,58 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Assets.GameAssets.Scripts.Maze.Factory;
 
 namespace Assets.GameAssets.Scripts.Maze.Model
 {
     public class MazeJumper: Maze, IMazeJumper
     {
-        public MazeJumper(MazeSize size, MazePoint startingPoint) : base(size, startingPoint)
-        {
-        }
 
         public IEnumerable<Direction> JumpableDirections()
         {
-            throw new NotImplementedException();
+            return MovementHelper.AdjacentPoints(CurrentPoint, Size);
         }
 
         public Direction JumpableFlag()
         {
-            throw new NotImplementedException();
+            return MovementHelper.AdjacentPointsFlag(CurrentPoint, Size);
         }
 
         public bool CanJumpInDirection(Direction d)
         {
-            throw new NotImplementedException();
+            return JumpableDirections().Any(x => d == x);
         }
 
         public bool TryJumpInDirection(Direction d)
         {
-            throw new NotImplementedException();
+            if (CanJumpInDirection(d))
+            {
+                CurrentPoint = MovementHelper.Move(CurrentPoint, d, Size);
+                return true;
+            }
+            return false;
         }
 
         public void JumpInDirection(Direction d)
         {
-            throw new NotImplementedException();
+            if (CanJumpInDirection(d))
+            {
+                CurrentPoint = MovementHelper.Move(CurrentPoint, d, Size);
+            }
+            else
+            {
+                throw new ArgumentException("Cannot Jump in that direction.");
+            }
         }
 
         public bool CanJumpToPoint(MazePoint p)
         {
-            throw new NotImplementedException();
+            return PointValidity.ValidPoint(p, Size);
         }
 
         public bool TryJumpToPoint(MazePoint p)
         {
-            throw new NotImplementedException();
+            if (CanJumpToPoint(p))
+            {
+                JumpToPoint(p);
+                return true;
+            }
+            return false;
         }
 
         public void JumpToPoint(MazePoint p)
         {
-            throw new NotImplementedException();
+            CurrentPoint = MovementHelper.Move(CurrentPoint, p, Size);
         }
 
         public IMaze JumpingFinished()
         {
-            throw new NotImplementedException();
+            var maze = new Maze();
+            maze.Initialise(ModelsWrapper, DirectionsFlagParser, MovementHelper, PointValidity, RandomPointGenerator, maze.CurrentPoint);
+            return maze;
         }
     }
 }

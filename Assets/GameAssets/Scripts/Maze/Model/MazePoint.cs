@@ -1,5 +1,6 @@
 ﻿namespace Assets.GameAssets.Scripts.Maze.Model
 {
+    //Maze Points are Zero Based relative to the size of the maze
     public class MazePoint
     {
         public int X { get; private set; }

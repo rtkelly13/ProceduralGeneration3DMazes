@@ -3,37 +3,98 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.Helper;
+using Assets.GameAssets.Scripts.Maze.MazeGeneration;
 
 namespace Assets.GameAssets.Scripts.Maze.Model
 {
     public class Maze : IMaze
     {
-        public Maze(MazeSize size, MazePoint startingPoint)
+        protected IModelsWrapper ModelsWrapper;
+        protected IDirectionsFlagParser DirectionsFlagParser;
+        protected IMovementHelper MovementHelper;
+        protected IPointValidity PointValidity;
+        protected IRandomPointGenerator RandomPointGenerator;
+
+        public MazePoint CurrentPoint { get; protected set; }
+
+        public MazeSize Size
         {
-            Size = size;
-            CurrentPoint = startingPoint;
+            get { return ModelsWrapper.ModelBuilder.Size; }
         }
+
+        public MazePoint StartPoint
+        {
+            get { return ModelsWrapper.ModelBuilder.StartPoint; }
+        }
+
+        public MazePoint EndPoint
+        {
+            get { return ModelsWrapper.ModelBuilder.EndPoint; }
+        }
+
+        public bool DeadEnded
+        {
+            get { return ModelsWrapper.DeadEnded; }
+        }
+
+        public void ToggleDeadEnd()
+        {
+            switch (ModelsWrapper.ModelMode)
+            {
+                case ModelMode.Standard:
+                    ModelsWrapper.SetState(ModelMode.DeadEndFilled);
+                    break;
+                case ModelMode.DeadEndFilled:
+                    ModelsWrapper.SetState(ModelMode.Standard);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public void DoDeadEndWrapping(Func<IModelBuilder, IDeadEndModelWrapper> modelAction)
+        {
+            ModelsWrapper.DoDeadEndWrapping(modelAction);
+        }
+
         public Direction GetFlagFromPoint()
         {
-            throw new NotImplementedException();
+            return ModelsWrapper.ModelBuilder.GetFlagFromPoint(CurrentPoint);
         }
 
         public IEnumerable<Direction> GetsDirectionsFromPoint()
         {
-            throw new NotImplementedException();
+            return DirectionsFlagParser.SplitDirectionsFromFlag(GetFlagFromPoint());
         }
 
         public bool HasVertexes(Direction flag)
         {
-            throw new NotImplementedException();
+            return DirectionsFlagParser.FlagHasDirections(GetFlagFromPoint(), flag);
         }
 
         public void MoveInDirection(Direction d)
         {
-            throw new NotImplementedException();
+            if (CanMoveInDirection(d))
+            {
+                CurrentPoint = MovementHelper.Move(CurrentPoint, d, Size);
+            }
+            throw new ArgumentException("There is no passage cannot move in that direction");
         }
 
-        public MazePoint CurrentPoint { get; protected set; }
-        public MazeSize Size { get; protected set; }
+        public bool CanMoveInDirection(Direction d)
+        {
+            return ModelsWrapper.ModelBuilder.HasDirections(CurrentPoint, d);
+        }
+
+        public void Initialise(IModelsWrapper modelsWrapper, IDirectionsFlagParser directionsFlagParser, IMovementHelper movementHelper, IPointValidity pointValidity, IRandomPointGenerator randomPointGenerator, MazePoint startingPoint = null)
+        {
+            ModelsWrapper = modelsWrapper;
+            DirectionsFlagParser = directionsFlagParser;
+            MovementHelper = movementHelper;
+            PointValidity = pointValidity;
+            RandomPointGenerator = randomPointGenerator;
+            CurrentPoint = startingPoint ?? randomPointGenerator.RandomPoint(Size);
+        }
     }
 }

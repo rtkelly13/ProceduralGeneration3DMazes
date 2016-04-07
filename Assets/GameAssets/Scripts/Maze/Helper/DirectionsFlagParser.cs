@@ -1,15 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.GameAssets.Scripts.Maze.Model;
 
 namespace Assets.GameAssets.Scripts.Maze.Helper
 {
     public class DirectionsFlagParser : IDirectionsFlagParser
     {
-        public List<Direction> Directions { get; private set; } = new List<Direction>
+        public List<Direction> Directions { get; private set; }
+
+        public DirectionsFlagParser()
         {
-            Direction.Left, Direction.Right, Direction.Forward, Direction.Back, Direction.Up, Direction.Down
-        };
+            Directions = new List<Direction>
+            {
+                Direction.Left,
+                Direction.Right,
+                Direction.Forward,
+                Direction.Back,
+                Direction.Up,
+                Direction.Down
+            };
+        }
 
         public IEnumerable<Direction> SplitDirectionsFromFlag(Direction d)
         {
@@ -31,9 +42,29 @@ namespace Assets.GameAssets.Scripts.Maze.Helper
             return flag | d;
         }
 
+        public Direction FlagUnion(Direction flag1, Direction flag2)
+        {
+            return flag1 & flag2;
+        }
+
+        public Direction FlagUnions(params Direction[] directions)
+        {
+            return directions.Aggregate(Direction.None, FlagUnion);
+        }
+
+        public Direction AddDirectionsTogether(params Direction[] directions)
+        {
+            return directions.Aggregate(Direction.None, AddDirectionsToFlag);
+        }
+
         public Direction RemoveDirectionsFromFlag(Direction flag, Direction d)
         {
             return flag & ~d;
+        }
+
+        public Direction OppositeFlag(Direction flag)
+        {
+            return RemoveDirectionsFromFlag(Direction.All, flag);
         }
 
         public Direction OppositeDirection(Direction d)

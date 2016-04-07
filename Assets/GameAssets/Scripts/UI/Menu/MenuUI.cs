@@ -30,6 +30,8 @@ namespace Assets.GameAssets.Scripts.UI.Menu
         private IValidateSettings _validateSettings;
         private IModelOptionsProvider _modelOptionsProvider;
         private ICurrentSettingsHolder _currentSettingsHolder;
+        private IWallCarverOptionsProvider _wallCarverOptionsProvider;
+        private ISceneLoader _sceneLoader;
 
         public MenuUI()
         {
@@ -44,7 +46,9 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             IAlgorithmSettingsInitialiser algorithmSettingsInitialiser,
             IValidateSettings validateSettings, 
             IModelOptionsProvider modelOptionsProvider,
-            ICurrentSettingsHolder currentSettingsHolder)
+            ICurrentSettingsHolder currentSettingsHolder,  
+            ISceneLoader sceneLoader, 
+            IWallCarverOptionsProvider wallCarverOptionsProvider)
         {
             _algorithmsProvider = algorithmsProvider;
             _resourceLoader = resourceLoader;
@@ -53,6 +57,8 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             _validateSettings = validateSettings;
             _modelOptionsProvider = modelOptionsProvider;
             _currentSettingsHolder = currentSettingsHolder;
+            _sceneLoader = sceneLoader;
+            _wallCarverOptionsProvider = wallCarverOptionsProvider;
         }
         // Use this for initialization
         void Start ()
@@ -62,14 +68,11 @@ namespace Assets.GameAssets.Scripts.UI.Menu
 
         public void OnClick()
         {
-            StaticCurrentSettingsHolder.Settings = _currentSettingsHolder.Settings;
-            SceneManager.LoadScene("Maze");
+            _sceneLoader.LoadMazeLoader();
         }
 
         void Awake()
         {
-
-            button.onClick.AddListener(OnClick);
 
             _currentSettingsHolder.Settings = new MazeGenerationSettings
             {
@@ -105,12 +108,17 @@ namespace Assets.GameAssets.Scripts.UI.Menu
                         Validate();
                     });
 
+            _resourceLoader.InstantiateControl<DropdownControl>(leftPanel)
+                .Initialise("Extra Walls", _wallCarverOptionsProvider.DropdownOptions, 0, true,
+                    option =>
+                    {
+                        _currentSettingsHolder.Settings.ExtraWalls =
+                            _wallCarverOptionsProvider.DropdownOptions.Single(x => x.Key == option).Value;
+                        Validate();
+                    });
+
             button.enabled = false;
-            button.onClick.AddListener(delegate
-            {
-                //Do action on validated settings option.
-                
-            });
+            button.onClick.AddListener(OnClick);
         }
 
         private void InitialiseRightPanel(Algorithm algorithm)

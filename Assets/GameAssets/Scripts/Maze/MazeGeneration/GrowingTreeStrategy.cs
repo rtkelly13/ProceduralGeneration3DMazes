@@ -3,10 +3,10 @@
     public enum GrowingTreeStrategy
     {
         Random = 0,
-        First = 1,
-        Last = 2,
-        RandomFirst = 3,
-        RandomLast = 4,
+        Oldest = 1,
+        Newest = 2,
+        RandomOldest = 3,
+        RandomNewest = 4,
         Middle = 5
     }
 }
