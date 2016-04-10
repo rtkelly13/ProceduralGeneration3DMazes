@@ -8,6 +8,7 @@ using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.MazeLoading;
 using Assets.GameAssets.Scripts.MazeUI.UserManagement;
 using Assets.GameAssets.Scripts.UI;
+using Assets.GameAssets.Scripts.UI.Helper;
 using Assets.GameAssets.Scripts.UI.Menu.Settings;
 using UnityEngine;
 using Zenject;
@@ -20,56 +21,78 @@ namespace Assets.GameAssets.Scripts.MazeUI
         public Transform CameraTransform;
         public Camera Camera;
 
+        private MazeGenerationResults _mazeResults;
+
         private IMazeUiBuilder _mazeUiBuilder;
-        private IMazeJumper _maze;
         private ICameraManagement _cameraManagement;
         private IInputHandler _inputHandler;
         private ICurrentMazeHolder _currentMazeHolder;
         private IGenerateTestCase _generateTestCase;
+        private ISceneLoader _sceneLoader;
+        private IMazeNeedsGenerating _mazeNeedsGenerating;
+        private IModelStateHelper _modelStateHelper;
+        private IUiModeSwitcher _uiModeSwitcher;
 
         [PostInject]
-        public void Init(IMazeUiBuilder mazeUiBuilder, ICameraManagement cameraManagement, IInputHandler inputHandler, ICurrentMazeHolder currentMazeHolder, IGenerateTestCase generateTestCase)
+        public void Init(IMazeUiBuilder mazeUiBuilder, ICameraManagement cameraManagement, IInputHandler inputHandler, ICurrentMazeHolder currentMazeHolder, IGenerateTestCase generateTestCase, ISceneLoader sceneLoader, IMazeNeedsGenerating mazeNeedsGenerating, IModelStateHelper modelStateHelper, IUiModeSwitcher uiModeSwitcher)
         {
             _mazeUiBuilder = mazeUiBuilder;
             _cameraManagement = cameraManagement;
             _inputHandler = inputHandler;
             _currentMazeHolder = currentMazeHolder;
             _generateTestCase = generateTestCase;
+            _mazeNeedsGenerating = mazeNeedsGenerating;
+            _sceneLoader = sceneLoader;
+            _modelStateHelper = modelStateHelper;
+            _uiModeSwitcher = uiModeSwitcher;
         }
 
         private int _currentLevel = 0;
-        
-
+        private UiMode _currentMode = UiMode.ShortestPath;
 
         public void Awake()
         {
-            //_generateTestCase.Run();
+            _generateTestCase.Run();
 
-            _maze = _currentMazeHolder.MazeJumper;
-            _cameraManagement.Init(CameraTransform, Camera, _maze);
+            _mazeResults = _currentMazeHolder.Results;
+            _cameraManagement.Init(CameraTransform, Camera, _mazeResults.MazeJumper);
             _inputHandler.Init(_cameraManagement, new InputHandlerOptions
             {
                 MoveDown = () => {
                     if (_currentLevel > 0)
                     {
                         _currentLevel -= 1;
-                        _mazeUiBuilder.BuildMazeUI(MazeField, _maze, _currentLevel);
+                        BuildUi();
                     }
                 },
                 MoveUp = () => {
-                    if (_currentLevel < _maze.Size.Z - 1)
+                    if (_currentLevel < _mazeResults.MazeJumper.Size.Z - 1)
                     {
                         _currentLevel += 1;
-                        _mazeUiBuilder.BuildMazeUI(MazeField, _maze, _currentLevel);
+                        BuildUi();
                     }
                 },
                 ToggleDeadEnds = () => {
-                    _maze.ToggleDeadEnd();
-                    _mazeUiBuilder.BuildMazeUI(MazeField, _maze, _currentLevel);
+                    _modelStateHelper.SetNextModelState(_mazeResults.MazeJumper);
+                    BuildUi();
+                },
+                ReturnToMazeLoading = needsRegenerating =>
+                {
+                    _mazeNeedsGenerating.Generate = needsRegenerating;
+                    _sceneLoader.LoadMazeLoader();
+                },
+                ToggleUI = () => {
+                    _currentMode = _uiModeSwitcher.GetNext(_currentMode);
+                    BuildUi();
                 }
             });
 
-            _mazeUiBuilder.BuildMazeUI(MazeField, _maze, _currentLevel);
+            BuildUi();
+        }
+
+        private void BuildUi()
+        {
+            _mazeUiBuilder.BuildMazeUI(MazeField, _mazeResults, _currentLevel, _currentMode);
         }
 
         public void Update()

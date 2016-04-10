@@ -4,6 +4,6 @@ namespace Assets.GameAssets.Scripts.Maze.Factory
 {
     public interface IMazeGenerationFactory
     {
-        IMazeJumper GenerateMaze(MazeGenerationSettings settings);
+        MazeGenerationResults GenerateMaze(MazeGenerationSettings settings);
     }
 }

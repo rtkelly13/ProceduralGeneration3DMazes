@@ -1,21 +1,28 @@
 ﻿using Assets.GameAssets.Scripts.Maze.Model;
+using Assets.GameAssets.Scripts.MazeUI.ImageHandling;
 using UnityEngine;
 
 namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
 {
     public class CameraManagementExtra : ICameraManagement
     {
+        private readonly ICellInformationProvider _cellInformation;
+        private IMazeJumper _maze;
+
         private Transform _cameraTransform;
         private Camera _camera;
 
-        public int speed;
         private float _currentSize = 1;
-        private IMazeJumper _maze;
+        private int _speed;
 
+        private int _screenWidth;
+        private int _screenHeight;
+        private float _aspectRatio;
 
-        public CameraManagementExtra()
+        public CameraManagementExtra(ICellInformationProvider cellInformation)
         {
-            speed = 5;
+            _cellInformation = cellInformation;
+            _speed = 10;
         }
 
         public void Init(Transform cameraTransform, Camera camera, IMazeJumper maze)
@@ -24,15 +31,18 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
             _camera = camera;
             _currentSize = _camera.orthographicSize;
             _maze = maze;
+            _screenWidth = Screen.width;
+            _screenHeight = Screen.height;
+            _aspectRatio = (float)_screenWidth/_screenHeight;
         }
 
         public void MoveLeft()
         {
-            var min = MinXY();
+            var min = MinX();
             if (_cameraTransform.localPosition.x > min)
             {
                 var existingPosition = _cameraTransform.localPosition;
-                _cameraTransform.localPosition = new Vector3(existingPosition.x - speed, existingPosition.y, existingPosition.z);
+                _cameraTransform.localPosition = new Vector3(existingPosition.x - _speed, existingPosition.y, existingPosition.z);
             }
         }
 
@@ -42,7 +52,7 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
             if (_cameraTransform.localPosition.x < max)
             {
                 var existingPosition = _cameraTransform.localPosition;
-                _cameraTransform.localPosition = new Vector3(existingPosition.x + speed, existingPosition.y, existingPosition.z);
+                _cameraTransform.localPosition = new Vector3(existingPosition.x + _speed, existingPosition.y, existingPosition.z);
             }
         }
 
@@ -52,58 +62,62 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
             if (_cameraTransform.localPosition.y < max)
             {
                 var existingPosition = _cameraTransform.localPosition;
-                _cameraTransform.localPosition = new Vector3(existingPosition.x, existingPosition.y + speed, existingPosition.z);
+                _cameraTransform.localPosition = new Vector3(existingPosition.x, existingPosition.y + _speed, existingPosition.z);
             }
         }
 
         public void MoveDown()
         {
-            var min = MinXY();
+            var min = MinY();
             if (_cameraTransform.localPosition.y > min)
             {
                 var existingPosition = _cameraTransform.localPosition;
-                _cameraTransform.localPosition = new Vector3(existingPosition.x, existingPosition.y - speed, existingPosition.z);
+                _cameraTransform.localPosition = new Vector3(existingPosition.x, existingPosition.y - _speed, existingPosition.z);
             }
         }
 
-        private int MinXY()
+        private int MinX()
         {
-            return (int)(_currentSize / 8 * 7);
+            return 0;
+        }
+
+        private int MinY()
+        {
+            return 0;
         }
 
         private int MaxX()
         {
-            return (36 * _maze.Size.X) - (int)(_currentSize / 8 * 7) - 10;
+            return (_cellInformation.CellSize * _maze.Size.X);
         }
 
         private int MaxY()
         {
-            return (36 * _maze.Size.Y) - (int)(_currentSize / 8 * 7) - 10;
+            return (_cellInformation.CellSize * _maze.Size.Y);
         }
 
         public void ZoomIn()
         {
             if (_camera.orthographicSize > 20)
             {
-                _currentSize = _camera.orthographicSize - 1;
+                _currentSize = _camera.orthographicSize - _speed;
                 _camera.orthographicSize = _currentSize;
             }
-            
         }
 
 
         public void ZoomOut()
         {
-            if (_camera.orthographicSize < 800)
+            if (_camera.orthographicSize < 1200)
             {
-                _currentSize = _camera.orthographicSize + 1;
+                _currentSize = _camera.orthographicSize + _speed;
                 _camera.orthographicSize = _currentSize;
             }
         }
 
         private void RealignCamera()
         {
-            while(_cameraTransform.localPosition.x < MinXY())
+            while(_cameraTransform.localPosition.x < MinX())
             {
                 MoveRight();
             }
@@ -111,7 +125,7 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
             {
                 MoveLeft();
             }
-            while (_cameraTransform.localPosition.y < MinXY())
+            while (_cameraTransform.localPosition.y < MinY())
             {
                 MoveUp();
             }

@@ -1,7 +1,10 @@
-﻿namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
+﻿using System.Collections.Generic;
+
+namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
 {
     public class DeadEndFillerResult
     {
-        public int CellsFilledIn { get; set; }
+        public List<CarvedCellResult> CellsFilledIn { get; set; }
+        public int TotalCellsFilledIn { get; set; }
     }
 }

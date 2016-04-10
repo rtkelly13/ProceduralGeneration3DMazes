@@ -23,7 +23,7 @@ namespace Assets.GameAssets.Scripts.Maze
             {
                 return true;
             }
-            var first = validationFailures.First();
+            //var first = validationFailures.First();
             return false;
         }
 

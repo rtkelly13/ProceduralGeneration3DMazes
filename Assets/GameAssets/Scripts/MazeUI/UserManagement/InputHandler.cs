@@ -51,6 +51,18 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
             {
                 _options.ToggleDeadEnds();
             }
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                _options.ReturnToMazeLoading(false);
+            }
+            if (Input.GetKeyDown(KeyCode.V))
+            {
+                _options.ReturnToMazeLoading(true);
+            }
+            if (Input.GetKeyDown(KeyCode.F))
+            {
+                _options.ToggleUI();
+            }
         } 
     }
 }

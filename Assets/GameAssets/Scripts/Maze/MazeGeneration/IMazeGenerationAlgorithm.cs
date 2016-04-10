@@ -4,6 +4,6 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
 {
     public interface IMazeGenerationAlgorithm
     {
-        IMazeCarver GenerateMaze(IMazeCarver initialisedMaze, MazeGenerationSettings settings);
+        AlgorithmRunResults GenerateMaze(IMazeCarver initialisedMaze, MazeGenerationSettings settings);
     }
 }

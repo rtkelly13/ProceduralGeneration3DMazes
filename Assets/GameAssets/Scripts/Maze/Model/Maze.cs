@@ -38,19 +38,14 @@ namespace Assets.GameAssets.Scripts.Maze.Model
             get { return ModelsWrapper.DeadEnded; }
         }
 
-        public void ToggleDeadEnd()
+        public ModelMode ModelMode
         {
-            switch (ModelsWrapper.ModelMode)
-            {
-                case ModelMode.Standard:
-                    ModelsWrapper.SetState(ModelMode.DeadEndFilled);
-                    break;
-                case ModelMode.DeadEndFilled:
-                    ModelsWrapper.SetState(ModelMode.Standard);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            get { return ModelsWrapper.ModelMode; }
+        }
+
+        public void SetState(ModelMode mode)
+        {
+            ModelsWrapper.SetState(mode);
         }
 
         public void DoDeadEndWrapping(Func<IModelBuilder, IDeadEndModelWrapper> modelAction)
@@ -79,7 +74,10 @@ namespace Assets.GameAssets.Scripts.Maze.Model
             {
                 CurrentPoint = MovementHelper.Move(CurrentPoint, d, Size);
             }
-            throw new ArgumentException("There is no passage cannot move in that direction");
+            else
+            {
+                throw new ArgumentException("There is no passage cannot move in that direction");
+            }
         }
 
         public bool CanMoveInDirection(Direction d)

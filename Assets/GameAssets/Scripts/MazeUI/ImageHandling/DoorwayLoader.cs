@@ -19,9 +19,9 @@ namespace Assets.GameAssets.Scripts.MazeUI.ImageHandling
             switch (type)
             {
                 case DoorType.Entrance:
-                    return _circleLoader.GetPrefab("green");
+                    return _circleLoader.GetPrefab("green", "Start");
                 case DoorType.Exit:
-                    return _circleLoader.GetPrefab("red");
+                    return _circleLoader.GetPrefab("red", "End");
                 default:
                     throw new ArgumentOutOfRangeException();
             }

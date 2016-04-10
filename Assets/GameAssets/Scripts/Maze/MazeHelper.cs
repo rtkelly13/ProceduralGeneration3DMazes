@@ -24,11 +24,21 @@ namespace Assets.GameAssets.Scripts.Maze
             return xValues.SelectMany(x => yValues.SelectMany(y => zValues.Select(z => _pointFactory.MakePoint(x, y, z)))).Select(point => function(point));
         }
 
+        public IEnumerable<MazePoint> GetForEachPoint<T>(MazeSize size, Func<MazePoint, bool> func)
+        {
+            return GetForEachPoint<MazePoint>(size, x => x).Where(func);
+        } 
+
         public IEnumerable<T> GetForEachZ<T>(MazeSize size, int z, Func<MazePoint, T> function)
         {
             var xValues = Enumerable.Range(0, size.X).ToList();
             var yValues = Enumerable.Range(0, size.Y).ToList();
             return xValues.SelectMany(x => yValues.Select(y  => _pointFactory.MakePoint(x, y, z))).Select(point => function(point));
+        }
+
+        public IEnumerable<MazePoint> GetForEachZ<T>(MazeSize size, int z, Func<MazePoint, bool> func)
+        {
+            return GetForEachZ<MazePoint>(size, z, x => x).Where(func);
         }
 
         public IEnumerable<MazePoint> GetPoints(MazeSize size, Func<MazePoint, bool> function)

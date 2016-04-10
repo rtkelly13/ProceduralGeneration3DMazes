@@ -15,11 +15,11 @@ namespace Assets.GameAssets.Scripts.MazeUI.ImageHandling
             _spriteCache = spriteCache;
         }
 
-        public CirclePrefab GetPrefab(string circleName)
+        public CirclePrefab GetPrefab(string circleName, string extra)
         {
             var resource = Resources.Load<CirclePrefab>("Circle");
             var prefab = UnityEngine.Object.Instantiate(resource);
-            prefab.Renderer.sprite = _spriteCache.GetSprite(String.Format("{0}Circle", circleName));
+            prefab.Renderer.sprite = _spriteCache.GetSprite(String.Format("{0}{1}Circle", circleName, extra));
             return prefab;
         }
     }

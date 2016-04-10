@@ -10,5 +10,6 @@ namespace Assets.GameAssets.Scripts.Maze.Model
         public MazeSize Size { get; set; }
         public MazeType Option { get; set; }
         public WallCarverOption ExtraWalls { get; set; }
+        public bool DoorsAtEdge { get; set; }
     }
 }

@@ -18,12 +18,15 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             _randomPointGenerator = randomPointGenerator;
         }
 
-        public IMazeCarver GenerateMaze(IMazeCarver initialisedMaze, MazeGenerationSettings settings)
+        public AlgorithmRunResults GenerateMaze(IMazeCarver initialisedMaze, MazeGenerationSettings settings)
         {
             var randomPoint = _randomPointGenerator.RandomPoint(initialisedMaze.Size);
             initialisedMaze.JumpToPoint(randomPoint);
             RecursiveBackTracker(initialisedMaze);
-            return initialisedMaze;
+            return new AlgorithmRunResults
+            {
+                Carver = initialisedMaze
+            };
         }
 
         public void RecursiveBackTracker(IMazeCarver carver)

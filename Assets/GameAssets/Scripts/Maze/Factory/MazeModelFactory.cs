@@ -25,20 +25,31 @@ namespace Assets.GameAssets.Scripts.Maze.Factory
             _randomPointGenerator = randomPointGenerator;
         }
 
-        public ModelBase BuildMaze(MazeType type, MazeSize size)
+        public IModelBuilder BuildMaze(MazeGenerationSettings settings)
         {
+            var pickType = PickType.Random;
+            if (settings.DoorsAtEdge)
+            {
+                pickType = PickType.RandomEdge;
+            }
+            var startPoint = _randomPointGenerator.RandomPoint(settings.Size, pickType);
+            var endPoint = _randomPointGenerator.RandomPoint(settings.Size, pickType);
+            while (startPoint.Equals(endPoint))
+            {
+                endPoint = _randomPointGenerator.RandomPoint(settings.Size, pickType);
+            }
             var options = new ModelInitialisationOptions
             {
-                Size = size,
-                StartPoint = _randomPointGenerator.RandomPoint(size, PickType.RandomEdge),
-                EndPoint = _randomPointGenerator.RandomPoint(size, PickType.RandomEdge)
+                Size = settings.Size,
+                StartPoint = startPoint,
+                EndPoint = endPoint
             };
-            switch (type)
+            switch (settings.Option)
             {
                 case MazeType.None:
                     throw new ArgumentException("Maze Type None is not supported");
                 case MazeType.UndirectedMaze:
-                    return new Model2 (_parser, _movementHelper, _mazeArrayBuilder).BaseInitialise(options);
+                    return new Model2(_parser, _movementHelper, _mazeArrayBuilder).BaseInitialise(options);
                 case MazeType.DirectedMaze:
                     return new Model1(_parser, _movementHelper, _mazeArrayBuilder).BaseInitialise(options);
                 case MazeType.DictionaryMaze:

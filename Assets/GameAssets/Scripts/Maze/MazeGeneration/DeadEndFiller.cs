@@ -12,12 +12,12 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
     public class DeadEndFiller : IDeadEndFiller
     {
         private readonly IDeadEndModelWrapperFactory _deadEndModelWrapperFactory;
-        private readonly IDeadEndRetriever _deadEndRetriever;
+        private readonly IPointsAndDirectionsRetriever _pointsAndDirectionsRetriever;
 
-        public DeadEndFiller(IDeadEndModelWrapperFactory deadEndModelWrapperFactory, IDeadEndRetriever deadEndRetriever)
+        public DeadEndFiller(IDeadEndModelWrapperFactory deadEndModelWrapperFactory, IPointsAndDirectionsRetriever pointsAndDirectionsRetriever)
         {
             _deadEndModelWrapperFactory = deadEndModelWrapperFactory;
-            _deadEndRetriever = deadEndRetriever;
+            _pointsAndDirectionsRetriever = pointsAndDirectionsRetriever;
         }
 
         public DeadEndFillerResult Fill(IMazeCarver mazeCarver)
@@ -27,32 +27,33 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                 var deadEndModel = _deadEndModelWrapperFactory.MakeModel(model);
                 return deadEndModel;
             });
-            mazeCarver.ToggleDeadEnd();
+            mazeCarver.SetState(ModelMode.DeadEndFilled);
             var deadEndsRemaining = true;
             var carvedDirections = new List<CarvedCellResult>();
             while (deadEndsRemaining)
             {
-                var points = _deadEndRetriever
+                var pointsAndDirections = _pointsAndDirectionsRetriever
                         .GetDeadEnds(mazeCarver)
-                        .Where(x => !PointIsStartOrEnd(x, mazeCarver)).ToList();
-                if (!points.Any())
+                        .Where(x => !_pointsAndDirectionsRetriever.PointIsStartOrEnd(x.Point, mazeCarver.StartPoint, mazeCarver.EndPoint)).ToList();
+                if (!pointsAndDirections.Any())
                 {
                     deadEndsRemaining = false;
                 }
                 else
                 {
-                    foreach (var point in points)
+                    foreach (var pointAndDirection in pointsAndDirections)
                     {
-                        mazeCarver.JumpToPoint(point);
+                        mazeCarver.JumpToPoint(pointAndDirection.Point);
                         carvedDirections.AddRange(FillInPassage(mazeCarver));
                     }
                 }
             }
             
-            mazeCarver.ToggleDeadEnd();
+            mazeCarver.SetState(ModelMode.Standard);
             return new DeadEndFillerResult
             {
-                CellsFilledIn = carvedDirections.Count
+                CellsFilledIn = carvedDirections,
+                TotalCellsFilledIn = carvedDirections.Count
             };
         }
 
@@ -70,7 +71,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                 };
                 mazeCarver.JumpInDirection(direction);
                
-                if (!PointIsStartOrEnd(mazeCarver.CurrentPoint, mazeCarver))
+                if (!_pointsAndDirectionsRetriever.PointIsStartOrEnd(mazeCarver.CurrentPoint, mazeCarver.StartPoint, mazeCarver.EndPoint))
                 {
                     foreach (var d in FillInPassage(mazeCarver))
                     {
@@ -78,11 +79,6 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                     }
                 }
             }
-        }
-
-        private bool PointIsStartOrEnd(MazePoint point, IMazeCarver mazeCarver)
-        {
-            return point.Equals(mazeCarver.StartPoint) || point.Equals(mazeCarver.EndPoint);
         }
     }
 }

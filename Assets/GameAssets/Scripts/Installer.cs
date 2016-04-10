@@ -7,6 +7,7 @@ using Assets.GameAssets.Scripts.Maze.Factory;
 using Assets.GameAssets.Scripts.Maze.Helper;
 using Assets.GameAssets.Scripts.Maze.MazeGeneration;
 using Assets.GameAssets.Scripts.Maze.Model;
+using Assets.GameAssets.Scripts.Maze.Solver;
 using Assets.GameAssets.Scripts.MazeLoading;
 using Assets.GameAssets.Scripts.MazeUI;
 using Assets.GameAssets.Scripts.MazeUI.ImageHandling;
@@ -35,7 +36,6 @@ namespace Assets.GameAssets.Scripts
             Container.Bind<ICellInformationLoader>().ToTransient<CellInformationLoader>();
             Container.Bind<ICurrentSettingsHolder>().ToTransient<CurrentSettingsHolder>();
             Container.Bind<IMazeUiBuilder>().ToTransient<MazeUiBuilder>();
-            Container.Bind<ICameraManagement>().ToSingle<CameraManagementExtra>();
             Container.Bind<IInputHandler>().ToTransient<InputHandler>();
             Container.Bind<IMazeHelper>().ToTransient<MazeHelper>();
             Container.Bind<ICurrentMazeHolder>().ToTransient<CurrentMazeHolder>();
@@ -59,7 +59,7 @@ namespace Assets.GameAssets.Scripts
             Container.Bind<IModelOptionsProvider>().ToTransient<ModelOptionsProvider>();
             Container.Bind<IYesNoOptionsProvider>().ToTransient<YesNoOptionsProvider>();
             Container.Bind<IWallCarverOptionsProvider>().ToTransient<WallCarverOptionsProvider>();
-            Container.Bind<IDeadEndRetriever>().ToTransient<DeadEndRetriever>();
+            Container.Bind<IPointsAndDirectionsRetriever>().ToTransient<PointsAndDirectionsRetriever>();
 
             Container.Bind<ISceneLoader>().ToTransient<SceneLoader>();
             Container.Bind<IMazeGenerationFactory>().ToTransient<MazeGenerationFactory>();
@@ -78,6 +78,18 @@ namespace Assets.GameAssets.Scripts
             Container.Bind<IGenerateTestCase>().ToTransient<GenerateTestCase>();
             Container.Bind<IDoorwayLoader>().ToTransient<DoorwayLoader>();
             Container.Bind<ICircleLoader>().ToTransient<CircleLoader>();
+            Container.Bind<IMazeNeedsGenerating>().ToTransient<MazeNeedsGenerating>();
+            Container.Bind<IHeuristicsGenerator>().ToTransient<HeuristicsGenerator>();
+            Container.Bind<IModelStateHelper>().ToTransient<ModelStateHelper>();
+            Container.Bind<IGraphBuilder>().ToTransient<GraphBuilder>();
+            Container.Bind<IShortestPathSolver>().ToTransient<ShortestPathSolver>();
+            Container.Bind<ILineLoader>().ToTransient<LineLoader>();
+            Container.Bind<ILineDrawer>().ToTransient<LineDrawer>();
+            Container.Bind<ICellInformationProvider>().ToTransient<CellInformationProvider>();
+            Container.Bind<IUiModeSwitcher>().ToTransient<UiModeSwitcher>();
+
+            Container.Bind<ICameraManagement>().ToSingle<CameraManagementExtra>();
+
         }
     }
 }

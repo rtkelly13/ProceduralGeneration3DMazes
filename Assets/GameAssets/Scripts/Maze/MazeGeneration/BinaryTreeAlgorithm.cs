@@ -17,7 +17,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             _directions = new List<Direction>() { Direction.Left, Direction.Up, Direction.Forward };
         }
 
-        public IMazeCarver GenerateMaze(IMazeCarver carver, MazeGenerationSettings settings)
+        public AlgorithmRunResults GenerateMaze(IMazeCarver carver, MazeGenerationSettings settings)
         {
             _mazeHelper.DoForEachPoint(carver.Size, p =>
             {
@@ -30,7 +30,10 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                     carver.CarveInDirection(first);
                 }
             });
-            return carver;
+            return new AlgorithmRunResults
+            {
+                Carver = carver,
+            };
         }
     }
 

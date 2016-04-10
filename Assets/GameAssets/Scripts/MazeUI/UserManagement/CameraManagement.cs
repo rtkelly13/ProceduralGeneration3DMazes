@@ -15,7 +15,7 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
 
         public CameraManagement()
         {
-            speed = 5;
+            speed = 10;
         }
 
         public void Init(Transform cameraTransform, Camera camera, IMazeJumper maze)
@@ -37,7 +37,7 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
 
         public void MoveRight()
         {
-            if (_cameraTransform.localPosition.x < 24 * _maze.Size.X)
+            if (_cameraTransform.localPosition.x < 36 * _maze.Size.X)
             {
                 var existingPosition = _cameraTransform.localPosition;
                 _cameraTransform.localPosition = new Vector3(existingPosition.x + speed, existingPosition.y, existingPosition.z);
@@ -46,7 +46,7 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
 
         public void MoveUp()
         {
-            if (_cameraTransform.localPosition.y < 24 * _maze.Size.Y)
+            if (_cameraTransform.localPosition.y < 36 * _maze.Size.Y)
             {
                 var existingPosition = _cameraTransform.localPosition;
                 _cameraTransform.localPosition = new Vector3(existingPosition.x, existingPosition.y + speed, existingPosition.z);

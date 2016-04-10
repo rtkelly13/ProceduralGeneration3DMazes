@@ -4,7 +4,7 @@ using Assets.GameAssets.Scripts.Maze.Factory;
 
 namespace Assets.GameAssets.Scripts.Maze.Model
 {
-    public interface IMaze
+    public interface IMaze: IModelState
     {
         Direction GetFlagFromPoint();
         IEnumerable<Direction> GetsDirectionsFromPoint();
@@ -19,8 +19,6 @@ namespace Assets.GameAssets.Scripts.Maze.Model
         MazePoint StartPoint { get; }
         MazePoint EndPoint { get; }
 
-        bool DeadEnded { get; }
-        void ToggleDeadEnd();
         void DoDeadEndWrapping(Func<IModelBuilder, IDeadEndModelWrapper> modelAction);
     }
 }

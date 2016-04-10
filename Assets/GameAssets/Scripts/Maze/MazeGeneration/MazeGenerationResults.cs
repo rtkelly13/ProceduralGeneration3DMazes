@@ -3,8 +3,9 @@ using Assets.GameAssets.Scripts.Maze.Model;
 
 namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
 {
-    public interface IDeadEndRetriever
+    public class AlgorithmRunResults
     {
-        IEnumerable<MazePoint> GetDeadEnds(IMazeCarver mazeCarver);
+        public IMazeCarver Carver { get; set; }
+        public List<Direction> DirectionsCarvedIn { get; set; }  
     }
 }

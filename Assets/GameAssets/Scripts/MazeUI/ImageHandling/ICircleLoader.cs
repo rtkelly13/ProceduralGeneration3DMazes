@@ -2,6 +2,6 @@
 {
     public interface ICircleLoader
     {
-        CirclePrefab GetPrefab(string circleName);
+        CirclePrefab GetPrefab(string circleName, string extra = "");
     }
 }

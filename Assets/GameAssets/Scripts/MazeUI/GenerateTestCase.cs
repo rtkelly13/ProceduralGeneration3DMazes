@@ -37,17 +37,17 @@ namespace Assets.GameAssets.Scripts.MazeUI
                 ExtraWalls = WallCarverOption.Random,
                 Size = new MazeSize
                 {
-                    X = 5,
-                    Y = 5,
-                    Z = 1
+                    X = 10,
+                    Y = 10,
+                    Z = 3
                 },
                 Strategies = new List<GrowingTreeStrategy>()
                 {
                     GrowingTreeStrategy.Newest
                 }
             };
-            _currentMazeHolder.MazeJumper = _generationFactory.GenerateMaze(_currentSettingsHolder.Settings);
-            var validation = _validator.EveryPointHasDirection(_currentMazeHolder.MazeJumper);
+            _currentMazeHolder.Results = _generationFactory.GenerateMaze(_currentSettingsHolder.Settings);
+            //var validation = _validator.EveryPointHasDirection(_currentMazeHolder.MazeJumper);
 
         }
     }

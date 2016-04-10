@@ -19,14 +19,18 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             _directionsFlagParser = directionsFlagParser;
         }
 
-        public IMazeCarver GenerateMaze(IMazeCarver initialisedMaze, MazeGenerationSettings settings)
+        public AlgorithmRunResults GenerateMaze(IMazeCarver initialisedMaze, MazeGenerationSettings settings)
         {
             var growingTreeSettings = settings as GrowingTreeSettings;
             if (growingTreeSettings == null)
             {
                 throw new ArgumentException("The correct settings are not present");
             }
-            return GenerateMaze(initialisedMaze, growingTreeSettings.Strategies);
+            var carver = GenerateMaze(initialisedMaze, growingTreeSettings.Strategies);
+            return new AlgorithmRunResults
+            {
+                Carver = carver
+            };
         }
 
         private IMazeCarver GenerateMaze(IMazeCarver initialisedMaze, List<GrowingTreeStrategy> strategies)

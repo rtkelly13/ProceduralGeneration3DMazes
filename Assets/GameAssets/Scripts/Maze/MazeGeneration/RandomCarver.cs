@@ -10,12 +10,12 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
     public class RandomCarver : IRandomCarver
     {
         private readonly IRandomPointGenerator _randomPointGenerator;
-        private readonly IDeadEndRetriever _deadEndRetriever;
+        private readonly IPointsAndDirectionsRetriever _pointsAndDirectionsRetriever;
 
-        public RandomCarver(IRandomPointGenerator randomPointGenerator, IDeadEndRetriever deadEndRetriever)
+        public RandomCarver(IRandomPointGenerator randomPointGenerator, IPointsAndDirectionsRetriever pointsAndDirectionsRetriever)
         {
             _randomPointGenerator = randomPointGenerator;
-            _deadEndRetriever = deadEndRetriever;
+            _pointsAndDirectionsRetriever = pointsAndDirectionsRetriever;
         }
 
         public void CarveRandomWalls(IMazeCarver carver, WallCarverOption option, int numberOfWalls)
@@ -28,13 +28,13 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                     RandomCarveWalls(carver, numberOfWalls);
                     break;
                 case WallCarverOption.DeadEnd:
-                    var points = _deadEndRetriever.GetDeadEnds(carver).ToList();
-                    points.Shuffle();
-                    foreach (var point in points)
+                    var pointsAndDirections = _pointsAndDirectionsRetriever.GetDeadEnds(carver).ToList();
+                    pointsAndDirections.Shuffle();
+                    foreach (var pointAndDirections in pointsAndDirections)
                     {
                         if (numberOfWalls > 0)
                         {
-                            numberOfWalls = CheckPoint(point, carver, numberOfWalls);
+                            numberOfWalls = CheckPoint(pointAndDirections.Point, carver, numberOfWalls);
                         }
                         else
                         {

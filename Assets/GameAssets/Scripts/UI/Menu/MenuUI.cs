@@ -4,6 +4,7 @@ using System.Linq;
 using Assets.Examples.UI;
 using Assets.GameAssets.Scripts.Maze.Factory;
 using Assets.GameAssets.Scripts.Maze.Model;
+using Assets.GameAssets.Scripts.MazeLoading;
 using Assets.GameAssets.Scripts.UI.Controls;
 using Assets.GameAssets.Scripts.UI.Helper;
 using Assets.GameAssets.Scripts.UI.Menu.Settings;
@@ -32,12 +33,8 @@ namespace Assets.GameAssets.Scripts.UI.Menu
         private ICurrentSettingsHolder _currentSettingsHolder;
         private IWallCarverOptionsProvider _wallCarverOptionsProvider;
         private ISceneLoader _sceneLoader;
-
-        public MenuUI()
-        {
-           
-        }
-
+        private IYesNoOptionsProvider _yesNoOptionsProvider;
+        private IMazeNeedsGenerating _mazeNeedsGenerating;
 
         [PostInject]
         public void Init(IAlgorithmsProvider algorithmsProvider,
@@ -48,7 +45,9 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             IModelOptionsProvider modelOptionsProvider,
             ICurrentSettingsHolder currentSettingsHolder,  
             ISceneLoader sceneLoader, 
-            IWallCarverOptionsProvider wallCarverOptionsProvider)
+            IWallCarverOptionsProvider wallCarverOptionsProvider,
+            IYesNoOptionsProvider yesNoOptionsProvider,
+            IMazeNeedsGenerating mazeNeedsGenerating)
         {
             _algorithmsProvider = algorithmsProvider;
             _resourceLoader = resourceLoader;
@@ -59,6 +58,8 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             _currentSettingsHolder = currentSettingsHolder;
             _sceneLoader = sceneLoader;
             _wallCarverOptionsProvider = wallCarverOptionsProvider;
+            _yesNoOptionsProvider = yesNoOptionsProvider;
+            _mazeNeedsGenerating = mazeNeedsGenerating;
         }
         // Use this for initialization
         void Start ()
@@ -68,13 +69,14 @@ namespace Assets.GameAssets.Scripts.UI.Menu
 
         public void OnClick()
         {
+            _mazeNeedsGenerating.Generate = true;
             _sceneLoader.LoadMazeLoader();
         }
 
         void Awake()
         {
 
-            _currentSettingsHolder.Settings = new MazeGenerationSettings
+            _currentSettingsHolder.Settings  = _currentSettingsHolder.Settings ?? new MazeGenerationSettings
             {
                 Size = new MazeSize(),
                 Option = MazeType.None,
@@ -114,6 +116,15 @@ namespace Assets.GameAssets.Scripts.UI.Menu
                     {
                         _currentSettingsHolder.Settings.ExtraWalls =
                             _wallCarverOptionsProvider.DropdownOptions.Single(x => x.Key == option).Value;
+                        Validate();
+                    });
+
+            _resourceLoader.InstantiateControl<DropdownControl>(leftPanel)
+                .Initialise("Force doors at edge of maze", _yesNoOptionsProvider.DropdownOptions, 0, true,
+                    option =>
+                    {
+                        _currentSettingsHolder.Settings.DoorsAtEdge =
+                            _yesNoOptionsProvider.DropdownOptions.Single(x => x.Key == option).Value;
                         Validate();
                     });
 
