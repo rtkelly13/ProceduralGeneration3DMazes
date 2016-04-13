@@ -14,6 +14,8 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Settings
             specificSettings.Size = baseSettings.Size ?? new MazeSize();
             specificSettings.Option = baseSettings.Option;
             specificSettings.Algorithm = baseSettings.Algorithm;
+            specificSettings.DoorsAtEdge = baseSettings.DoorsAtEdge;
+            specificSettings.AgentType = baseSettings.AgentType;
         }
     }
 }

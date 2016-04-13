@@ -16,7 +16,8 @@ namespace Assets.GameAssets.Scripts.UI.Helper
             {
                 new DropdownOption<string, WallCarverOption>("None", WallCarverOption.None),
                 new DropdownOption<string, WallCarverOption>("Random", WallCarverOption.Random),
-                new DropdownOption<string,WallCarverOption>("Dead End", WallCarverOption.DeadEnd)
+                new DropdownOption<string,WallCarverOption>("Dead End", WallCarverOption.DeadEnd),
+                new DropdownOption<string, WallCarverOption>("Dead End with preferred wall", WallCarverOption.DeadEndWithPreferredDirection)
             };
         }
     }

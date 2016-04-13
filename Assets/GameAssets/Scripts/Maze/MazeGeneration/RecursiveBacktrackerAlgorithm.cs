@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Assets.GameAssets.Scripts.Maze.Helper;
@@ -18,14 +17,14 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             _randomPointGenerator = randomPointGenerator;
         }
 
-        public AlgorithmRunResults GenerateMaze(IMazeCarver initialisedMaze, MazeGenerationSettings settings)
+        public AlgorithmRunResults GenerateMaze(IMazeCarver maze, MazeGenerationSettings settings)
         {
-            var randomPoint = _randomPointGenerator.RandomPoint(initialisedMaze.Size);
-            initialisedMaze.JumpToPoint(randomPoint);
-            RecursiveBackTracker(initialisedMaze);
+            var randomPoint = _randomPointGenerator.RandomPoint(maze.Size);
+            maze.JumpToPoint(randomPoint);
+            RecursiveBackTracker(maze);
             return new AlgorithmRunResults
             {
-                Carver = initialisedMaze
+                Carver = maze
             };
         }
 
@@ -47,10 +46,5 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                 carver.JumpToPoint(currentPoint);
             }
         }
-    }
-
-    public interface IRecursiveBacktrackerAlgorithm : IMazeGenerationAlgorithm
-    {
-        
     }
 }

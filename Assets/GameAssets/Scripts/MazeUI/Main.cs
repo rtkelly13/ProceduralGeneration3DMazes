@@ -48,11 +48,10 @@ namespace Assets.GameAssets.Scripts.MazeUI
         }
 
         private int _currentLevel = 0;
-        private UiMode _currentMode = UiMode.ShortestPath;
 
         public void Awake()
         {
-            _generateTestCase.Run();
+            //_generateTestCase.Run();
 
             _mazeResults = _currentMazeHolder.Results;
             _cameraManagement.Init(CameraTransform, Camera, _mazeResults.MazeJumper);
@@ -73,17 +72,20 @@ namespace Assets.GameAssets.Scripts.MazeUI
                     }
                 },
                 ToggleDeadEnds = () => {
-                    _modelStateHelper.SetNextModelState(_mazeResults.MazeJumper);
-                    BuildUi();
+                    if (_uiModeSwitcher.Mode != UiMode.Agent)
+                    {
+                        _modelStateHelper.SetNextModelState(_mazeResults.MazeJumper);
+                        BuildUi();
+                    }
                 },
                 ReturnToMazeLoading = needsRegenerating =>
                 {
                     _mazeNeedsGenerating.Generate = needsRegenerating;
                     _sceneLoader.LoadMazeLoader();
                 },
-                ToggleUI = () => {
-                    _currentMode = _uiModeSwitcher.GetNext(_currentMode);
-                    BuildUi();
+                ToggleUI = () =>
+                {
+                    TrySwitch();
                 }
             });
 
@@ -92,7 +94,32 @@ namespace Assets.GameAssets.Scripts.MazeUI
 
         private void BuildUi()
         {
-            _mazeUiBuilder.BuildMazeUI(MazeField, _mazeResults, _currentLevel, _currentMode);
+            _mazeUiBuilder.BuildMazeUI(MazeField, _mazeResults, _currentLevel, _uiModeSwitcher.Mode);
+        }
+
+        private void TrySwitch()
+        {
+            var switched = false;
+            while (!switched)
+            {
+                var nextMode = _uiModeSwitcher.GetNext();
+                if (nextMode == UiMode.Agent)
+                {
+                    if (_mazeResults.MazeJumper.ModelMode == ModelMode.DeadEndFilled)
+                    {
+                        _mazeResults.MazeJumper.SetState(ModelMode.Standard);
+                    }
+                }
+                try
+                {
+                    BuildUi();
+                    switched = true;
+                }
+                catch (Exception)
+                {
+
+                }
+            }
         }
 
         public void Update()

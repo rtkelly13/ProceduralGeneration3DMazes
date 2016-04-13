@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Assets.GameAssets.Scripts.Maze;
+using Assets.GameAssets.Scripts.Maze.Agents;
 using Assets.GameAssets.Scripts.Maze.Factory;
 using Assets.GameAssets.Scripts.Maze.MazeGeneration;
 using Assets.GameAssets.Scripts.Maze.Model;
@@ -34,17 +35,18 @@ namespace Assets.GameAssets.Scripts.MazeUI
             {
                 Algorithm = Algorithm.GrowingTreeAlgorithm,
                 Option = MazeType.DirectedMaze,
-                ExtraWalls = WallCarverOption.Random,
+                ExtraWalls = WallCarverOption.DeadEndWithPreferredDirection,
                 Size = new MazeSize
                 {
                     X = 10,
                     Y = 10,
-                    Z = 3
+                    Z = 1
                 },
                 Strategies = new List<GrowingTreeStrategy>()
                 {
                     GrowingTreeStrategy.Newest
-                }
+                },
+                AgentType = AgentType.Perfect
             };
             _currentMazeHolder.Results = _generationFactory.GenerateMaze(_currentSettingsHolder.Settings);
             //var validation = _validator.EveryPointHasDirection(_currentMazeHolder.MazeJumper);

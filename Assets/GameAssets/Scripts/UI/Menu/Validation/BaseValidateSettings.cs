@@ -18,25 +18,25 @@ namespace Assets.GameAssets.Scripts.UI.Menu.Validation
             {
                 yield return new ValidationResult(null, false, "The X value must be greater than 0");
             }
-            if (settings.Size.X > 100)
+            if (settings.Size.X > 1000)
             {
-                yield return new ValidationResult(null, false, "The X value must be less than 100");
+                yield return new ValidationResult(null, false, "The X value must be less than 1000");
             }
             if (settings.Size.Y < 1)
             {
                 yield return new ValidationResult(null, false, "The Y value must be greater than 0");
             }
-            if (settings.Size.Y > 100)
+            if (settings.Size.Y > 1000)
             {
-                yield return new ValidationResult(null, false, "The Y value must be less than 100");
+                yield return new ValidationResult(null, false, "The Y value must be less than 1000");
             }
             if (settings.Size.Z < 1)
             {
                 yield return new ValidationResult(null, false, "The Z value must be greater than 0");
             }
-            if (settings.Size.Z > 100)
+            if (settings.Size.Z > 1000)
             {
-                yield return new ValidationResult(null, false, "The Z value must be less than 100");
+                yield return new ValidationResult(null, false, "The Z value must be less than 1000");
             }
             if (settings.Option == MazeType.None)
             {

@@ -17,22 +17,22 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             _directions = new List<Direction>() { Direction.Left, Direction.Up, Direction.Forward };
         }
 
-        public AlgorithmRunResults GenerateMaze(IMazeCarver carver, MazeGenerationSettings settings)
+        public AlgorithmRunResults GenerateMaze(IMazeCarver maze, MazeGenerationSettings settings)
         {
-            _mazeHelper.DoForEachPoint(carver.Size, p =>
+            _mazeHelper.DoForEachPoint(maze.Size, p =>
             {
-                carver.JumpToPoint(p);
-                var directions = _directions.Where(carver.CanCarveInDirection).ToList();
+                maze.JumpToPoint(p);
+                var directions = _directions.Where(maze.CanCarveInDirection).ToList();
                 directions.Shuffle();
                 if (directions.Any())
                 {
                     var first = directions.First();
-                    carver.CarveInDirection(first);
+                    maze.CarveInDirection(first);
                 }
             });
             return new AlgorithmRunResults
             {
-                Carver = carver,
+                Carver = maze,
             };
         }
     }

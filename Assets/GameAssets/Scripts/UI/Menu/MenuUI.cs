@@ -35,6 +35,7 @@ namespace Assets.GameAssets.Scripts.UI.Menu
         private ISceneLoader _sceneLoader;
         private IYesNoOptionsProvider _yesNoOptionsProvider;
         private IMazeNeedsGenerating _mazeNeedsGenerating;
+        private IAgentOptionsProvider _agentOptionsProvider;
 
         [PostInject]
         public void Init(IAlgorithmsProvider algorithmsProvider,
@@ -47,7 +48,8 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             ISceneLoader sceneLoader, 
             IWallCarverOptionsProvider wallCarverOptionsProvider,
             IYesNoOptionsProvider yesNoOptionsProvider,
-            IMazeNeedsGenerating mazeNeedsGenerating)
+            IMazeNeedsGenerating mazeNeedsGenerating,
+            IAgentOptionsProvider agentOptionsProvider)
         {
             _algorithmsProvider = algorithmsProvider;
             _resourceLoader = resourceLoader;
@@ -60,6 +62,7 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             _wallCarverOptionsProvider = wallCarverOptionsProvider;
             _yesNoOptionsProvider = yesNoOptionsProvider;
             _mazeNeedsGenerating = mazeNeedsGenerating;
+            _agentOptionsProvider = agentOptionsProvider;
         }
         // Use this for initialization
         void Start ()
@@ -83,7 +86,8 @@ namespace Assets.GameAssets.Scripts.UI.Menu
                 Algorithm = Algorithm.None
             };
 
-            _resourceLoader.InstantiateControl<DropdownControl>(leftPanel).Initialise("Algorithms", _algorithmsProvider.DropdownOptions, 0, true, InitialiseRightPanel);
+            _resourceLoader.InstantiateControl<DropdownControl>(leftPanel).Initialise("Algorithms", _algorithmsProvider.DropdownOptions, 
+                _algorithmsProvider.DropdownOptions.FindIndex(x => x.Value == _currentSettingsHolder.Settings.Algorithm), true, InitialiseRightPanel);
 
             _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("X", 0, 100, _currentSettingsHolder.Settings.Size.X, i =>
             {
@@ -97,21 +101,23 @@ namespace Assets.GameAssets.Scripts.UI.Menu
                 Validate();
             });
 
-            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Z", 0, 100, _currentSettingsHolder.Settings.Size.Y, i =>
+            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Z", 0, 100, _currentSettingsHolder.Settings.Size.Z, i =>
             {
                 _currentSettingsHolder.Settings.Size.Z = i;
                 Validate();
             });
 
             _resourceLoader.InstantiateControl<DropdownControl>(leftPanel)
-                .Initialise("Model Option", _modelOptionsProvider.DropdownOptions, 0, true,
+                .Initialise("Model option", _modelOptionsProvider.DropdownOptions,
+                _modelOptionsProvider.DropdownOptions.FindIndex(x => x.Value == _currentSettingsHolder.Settings.Option), true,
                     option => {
                         _currentSettingsHolder.Settings.Option = option;
                         Validate();
                     });
 
             _resourceLoader.InstantiateControl<DropdownControl>(leftPanel)
-                .Initialise("Extra Walls", _wallCarverOptionsProvider.DropdownOptions, 0, true,
+                .Initialise("Carve extra walls", _wallCarverOptionsProvider.DropdownOptions, 
+                _wallCarverOptionsProvider.DropdownOptions.FindIndex(x => x.Value == _currentSettingsHolder.Settings.ExtraWalls), true,
                     option =>
                     {
                         _currentSettingsHolder.Settings.ExtraWalls =
@@ -120,13 +126,23 @@ namespace Assets.GameAssets.Scripts.UI.Menu
                     });
 
             _resourceLoader.InstantiateControl<DropdownControl>(leftPanel)
-                .Initialise("Force doors at edge of maze", _yesNoOptionsProvider.DropdownOptions, 0, true,
+                .Initialise("Force doors at edge of maze", _yesNoOptionsProvider.DropdownOptions, 
+                _yesNoOptionsProvider.DropdownOptions.FindIndex(x => x.Value == _currentSettingsHolder.Settings.DoorsAtEdge), true,
                     option =>
                     {
                         _currentSettingsHolder.Settings.DoorsAtEdge =
                             _yesNoOptionsProvider.DropdownOptions.Single(x => x.Key == option).Value;
                         Validate();
                     });
+
+            _resourceLoader.InstantiateControl<DropdownControl>(leftPanel)
+                .Initialise("Agent to run", _agentOptionsProvider.DropdownOptions, 
+                _agentOptionsProvider.DropdownOptions.FindIndex(x => x.Value == _currentSettingsHolder.Settings.AgentType), true, option =>
+                {
+                    _currentSettingsHolder.Settings.AgentType =
+                            _agentOptionsProvider.DropdownOptions.Single(x => x.Key == option).Value;
+                    Validate();
+                });
 
             button.enabled = false;
             button.onClick.AddListener(OnClick);

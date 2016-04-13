@@ -108,7 +108,7 @@ namespace Assets.GameAssets.Scripts.MazeUI.UserManagement
 
         public void ZoomOut()
         {
-            if (_camera.orthographicSize < 1200)
+            if (_camera.orthographicSize < 1400)
             {
                 _currentSize = _camera.orthographicSize + _speed;
                 _camera.orthographicSize = _currentSize;

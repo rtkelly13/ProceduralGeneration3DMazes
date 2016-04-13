@@ -7,17 +7,30 @@ namespace Assets.GameAssets.Scripts.MazeUI
 {
     public class UiModeSwitcher : IUiModeSwitcher
     {
-        public UiMode GetNext(UiMode mode)
+        public UiModeSwitcher()
         {
-            switch (mode)
+            Mode = UiMode.ShortestPath;
+        }
+
+        public UiMode Mode { get; set; }
+
+        public UiMode GetNext()
+        {
+            switch (Mode)
             {
                 case UiMode.ShortestPath:
-                    return UiMode.DeadEndLess;
+                    Mode = UiMode.DeadEndLess;
+                    break;
                 case UiMode.DeadEndLess:
-                    return UiMode.ShortestPath;
+                    Mode = UiMode.Agent;
+                    break;
+                case UiMode.Agent:
+                    Mode = UiMode.ShortestPath;
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+            return Mode;
         }
     }
 }

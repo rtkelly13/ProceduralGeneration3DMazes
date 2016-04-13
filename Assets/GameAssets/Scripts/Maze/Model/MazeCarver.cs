@@ -60,7 +60,7 @@ namespace Assets.GameAssets.Scripts.Maze.Model
         public IMazeJumper CarvingFinished()
         {
             var jumper = new MazeJumper();
-            jumper.Initialise(ModelsWrapper, DirectionsFlagParser, MovementHelper,PointValidity, RandomPointGenerator, CurrentPoint);
+            jumper.Initialise(ModelsWrapper, DirectionsFlagParser, MovementHelper,PointValidity, RandomPointGenerator, this.CurrentPoint);
             return jumper;
         } 
     }

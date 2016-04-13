@@ -2,6 +2,7 @@
 {
     public interface IUiModeSwitcher
     {
-        UiMode GetNext(UiMode mode);
+        UiMode Mode { get; set; }
+        UiMode GetNext();
     }
 }

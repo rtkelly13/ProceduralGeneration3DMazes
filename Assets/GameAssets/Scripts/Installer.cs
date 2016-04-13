@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Assets.GameAssets.Scripts.Maze;
+using Assets.GameAssets.Scripts.Maze.Agents;
 using Assets.GameAssets.Scripts.Maze.Factory;
 using Assets.GameAssets.Scripts.Maze.Helper;
+using Assets.GameAssets.Scripts.Maze.Heuristics;
 using Assets.GameAssets.Scripts.Maze.MazeGeneration;
 using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.Maze.Solver;
@@ -64,8 +66,6 @@ namespace Assets.GameAssets.Scripts
             Container.Bind<ISceneLoader>().ToTransient<SceneLoader>();
             Container.Bind<IMazeGenerationFactory>().ToTransient<MazeGenerationFactory>();
             Container.Bind<IMazeModelFactory>().ToTransient<MazeModelFactory>();
-            Container.Bind<IGrowingTreeAlgorithm>().ToTransient<GrowingTreeAlgorithm>();
-            Container.Bind<IRecursiveBacktrackerAlgorithm>().ToTransient<RecursiveBacktrackerAlgorithm>();
             Container.Bind<IBinaryTreeAlgorithm>().ToTransient<BinaryTreeAlgorithm>();
             Container.Bind<IMazeFactory>().ToTransient<MazeFactory>();
             Container.Bind<IMazeValidator>().ToTransient<MazeValidator>();
@@ -86,9 +86,15 @@ namespace Assets.GameAssets.Scripts
             Container.Bind<ILineLoader>().ToTransient<LineLoader>();
             Container.Bind<ILineDrawer>().ToTransient<LineDrawer>();
             Container.Bind<ICellInformationProvider>().ToTransient<CellInformationProvider>();
-            Container.Bind<IUiModeSwitcher>().ToTransient<UiModeSwitcher>();
+            Container.Bind<IMazeStatsGenerator>().ToTransient<MazeStatsGenerator>();
+            Container.Bind<IUiModeSwitcher>().ToSingle<UiModeSwitcher>();
+            Container.Bind<IAgentFactory>().ToTransient<AgentFactory>();
+            Container.Bind<IAgentOptionsProvider>().ToTransient<AgentOptionsProvider>();
+            Container.Bind<ITimeRecorder>().ToTransient<TimeRecorder>();
 
             Container.Bind<ICameraManagement>().ToSingle<CameraManagementExtra>();
+            Container.Bind<IGrowingTreeAlgorithm>().ToTransient<GrowingTreeAlgorithmLinkedList>();
+            Container.Bind<IRecursiveBacktrackerAlgorithm>().ToTransient<BacktrackerAlgorithm>();
 
         }
     }

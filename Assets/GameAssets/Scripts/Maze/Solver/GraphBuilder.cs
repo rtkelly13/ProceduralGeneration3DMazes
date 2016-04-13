@@ -24,7 +24,7 @@ namespace Assets.GameAssets.Scripts.Maze.Solver
             carver.SetState(ModelMode.DeadEndFilled);
 
             var dictionary = new Dictionary<MazePoint, GraphNode>();
-            var junctions = _directionsRetriever.GetJunctions(carver).ToList();
+            var junctions = _directionsRetriever.GetJunctions(carver);
 
             foreach (var junction in junctions)
             {

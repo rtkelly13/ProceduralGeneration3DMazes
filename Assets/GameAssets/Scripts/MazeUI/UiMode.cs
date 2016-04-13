@@ -4,6 +4,6 @@
     {
         ShortestPath = 0,
         DeadEndLess = 1,
-
+        Agent = 2
     }
 }

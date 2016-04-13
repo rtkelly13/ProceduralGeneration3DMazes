@@ -68,7 +68,7 @@ namespace Assets.GameAssets.Scripts.Maze.Model
         public IMaze JumpingFinished()
         {
             var maze = new Maze();
-            maze.Initialise(ModelsWrapper, DirectionsFlagParser, MovementHelper, PointValidity, RandomPointGenerator, maze.CurrentPoint);
+            maze.Initialise(ModelsWrapper, DirectionsFlagParser, MovementHelper, PointValidity, RandomPointGenerator, this.CurrentPoint);
             return maze;
         }
     }

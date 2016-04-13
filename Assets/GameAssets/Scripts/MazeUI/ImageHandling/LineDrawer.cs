@@ -77,7 +77,7 @@ namespace Assets.GameAssets.Scripts.MazeUI.ImageHandling
             var sprite = _lineLoader.GetLine(LineOption.HalfLine, colour);
             sprite.transform.SetParent(mazeField, false);
             sprite.transform.localPosition = new Vector3(_cellInformation.CellSize * p.X + _cellInformation.QuarterCellSize / 2, _cellInformation.CellSize * p.Y + +_cellInformation.QuarterCellSize / 2, -5);
-            sprite.transform.localScale = new Vector3(_cellInformation.QuarterLineWidth * 3 - 5, _cellInformation.LineHeight, 0);
+            sprite.transform.localScale = new Vector3(_cellInformation.QuarterLineWidth * 3, _cellInformation.LineHeight, 0);
             sprite.transform.Rotate(0, 0, 45);
         }
 
@@ -86,7 +86,7 @@ namespace Assets.GameAssets.Scripts.MazeUI.ImageHandling
             var sprite = _lineLoader.GetLine(LineOption.HalfLine, colour);
             sprite.transform.SetParent(mazeField, false);
             sprite.transform.localPosition = new Vector3(_cellInformation.CellSize * p.X - _cellInformation.QuarterCellSize / 2, _cellInformation.CellSize * p.Y - _cellInformation.QuarterCellSize / 2, -5);
-            sprite.transform.localScale = new Vector3(_cellInformation.QuarterLineWidth * 3 - 5, _cellInformation.LineHeight, 0);
+            sprite.transform.localScale = new Vector3(_cellInformation.QuarterLineWidth * 3, _cellInformation.LineHeight, 0);
             sprite.transform.Rotate(0, 0, 45);
         }
 

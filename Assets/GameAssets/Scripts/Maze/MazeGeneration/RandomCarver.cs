@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.GameAssets.Scripts.Maze.Helper;
 using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.UI.Helper;
 
@@ -11,11 +12,13 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
     {
         private readonly IRandomPointGenerator _randomPointGenerator;
         private readonly IPointsAndDirectionsRetriever _pointsAndDirectionsRetriever;
+        private readonly IDirectionsFlagParser _directionsFlagParser;
 
-        public RandomCarver(IRandomPointGenerator randomPointGenerator, IPointsAndDirectionsRetriever pointsAndDirectionsRetriever)
+        public RandomCarver(IRandomPointGenerator randomPointGenerator, IPointsAndDirectionsRetriever pointsAndDirectionsRetriever, IDirectionsFlagParser directionsFlagParser)
         {
             _randomPointGenerator = randomPointGenerator;
             _pointsAndDirectionsRetriever = pointsAndDirectionsRetriever;
+            _directionsFlagParser = directionsFlagParser;
         }
 
         public void CarveRandomWalls(IMazeCarver carver, WallCarverOption option, int numberOfWalls)
@@ -28,24 +31,38 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                     RandomCarveWalls(carver, numberOfWalls);
                     break;
                 case WallCarverOption.DeadEnd:
-                    var pointsAndDirections = _pointsAndDirectionsRetriever.GetDeadEnds(carver).ToList();
-                    pointsAndDirections.Shuffle();
-                    foreach (var pointAndDirections in pointsAndDirections)
-                    {
-                        if (numberOfWalls > 0)
-                        {
-                            numberOfWalls = CheckPoint(pointAndDirections.Point, carver, numberOfWalls);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    RandomCarveWalls(carver, numberOfWalls);
+                    DeadEndCarver(carver, numberOfWalls, false);
+                    break;
+                case WallCarverOption.DeadEndWithPreferredDirection:
+                    DeadEndCarver(carver, numberOfWalls, true);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private void DeadEndCarver(IMazeCarver carver, int numberOfWalls, bool hasPreferredDirection)
+        {
+            var pointsAndDirections = _pointsAndDirectionsRetriever.GetDeadEnds(carver).ToList();
+            pointsAndDirections.Shuffle();
+            foreach (var pointAndDirections in pointsAndDirections)
+            {
+                if (numberOfWalls > 0)
+                {
+                    Direction preferredDirection = Direction.None;
+                    if (hasPreferredDirection)
+                    {
+                        preferredDirection = _directionsFlagParser
+                                                    .OppositeDirection(pointAndDirections.Directions.First());
+                    }
+                    numberOfWalls = CheckPoint(pointAndDirections.Point, carver, numberOfWalls, preferredDirection);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            RandomCarveWalls(carver, numberOfWalls);
         }
 
 
@@ -58,14 +75,17 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             }
         }
 
-        private int CheckPoint(MazePoint point, IMazeCarver carver, int numberOfWalls)
+        private int CheckPoint(MazePoint point, IMazeCarver carver, int numberOfWalls, Direction preferredDirection = Direction.None)
         {
             carver.JumpToPoint(point);
             var directions = carver.CarvableDirections().ToList();
             directions.Shuffle();
             if (directions.Any())
             {
-                carver.CarveInDirection(directions.First());
+                var selectedDirection = directions.Contains(preferredDirection)
+                    ? preferredDirection
+                    : directions.First();
+                carver.CarveInDirection(selectedDirection);
                 numberOfWalls--;
             }
             return numberOfWalls;
