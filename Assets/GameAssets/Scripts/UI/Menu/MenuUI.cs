@@ -81,7 +81,12 @@ namespace Assets.GameAssets.Scripts.UI.Menu
 
             _currentSettingsHolder.Settings  = _currentSettingsHolder.Settings ?? new MazeGenerationSettings
             {
-                Size = new MazeSize(),
+                Size = new MazeSize
+                {
+                    X = 1,
+                    Y = 1,
+                    Z = 1
+                },
                 Option = MazeType.None,
                 Algorithm = Algorithm.None
             };
@@ -89,19 +94,19 @@ namespace Assets.GameAssets.Scripts.UI.Menu
             _resourceLoader.InstantiateControl<DropdownControl>(leftPanel).Initialise("Algorithms", _algorithmsProvider.DropdownOptions, 
                 _algorithmsProvider.DropdownOptions.FindIndex(x => x.Value == _currentSettingsHolder.Settings.Algorithm), true, InitialiseRightPanel);
 
-            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("X", 0, 100, _currentSettingsHolder.Settings.Size.X, i =>
+            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("X", 1, 75, _currentSettingsHolder.Settings.Size.X, i =>
             {
                 _currentSettingsHolder.Settings.Size.X = i;
                 Validate();
             });
 
-            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Y", 0, 100, _currentSettingsHolder.Settings.Size.Y, i =>
+            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Y", 1, 75, _currentSettingsHolder.Settings.Size.Y, i =>
             {
                 _currentSettingsHolder.Settings.Size.Y = i;
                 Validate();
             });
 
-            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Z", 0, 100, _currentSettingsHolder.Settings.Size.Z, i =>
+            _resourceLoader.InstantiateControl<SliderControl>(leftPanel).Initialize("Z", 1, 75, _currentSettingsHolder.Settings.Size.Z, i =>
             {
                 _currentSettingsHolder.Settings.Size.Z = i;
                 Validate();

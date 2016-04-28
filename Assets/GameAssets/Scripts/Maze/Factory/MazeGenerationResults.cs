@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Assets.GameAssets.Scripts.Maze.Agents;
 using Assets.GameAssets.Scripts.Maze.Heuristics;
 using Assets.GameAssets.Scripts.Maze.MazeGeneration;
@@ -18,5 +19,6 @@ namespace Assets.GameAssets.Scripts.Maze.Factory
         public TimeSpan AgentGenerationTime { get; set; }
         public TimeSpan HeuristicsTime { get; set; }
         public TimeSpan TotalTime { get; set; }
+        public List<DirectionAndPoint> DirectionsCarvedIn { get; set; }
     }
 }

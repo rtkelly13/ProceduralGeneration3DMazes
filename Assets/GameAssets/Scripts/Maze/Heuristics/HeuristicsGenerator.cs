@@ -1,4 +1,5 @@
 ﻿using Assets.GameAssets.Scripts.Maze.Factory;
+using Assets.GameAssets.Scripts.Maze.MazeGeneration;
 using Assets.GameAssets.Scripts.Maze.Model;
 using Assets.GameAssets.Scripts.Maze.Solver;
 
@@ -15,15 +16,14 @@ namespace Assets.GameAssets.Scripts.Maze.Heuristics
             _mazeStatsGenerator = mazeStatsGenerator;
         }
 
-        public HeuristicsResults GetResults(IMazeCarver carver)
+        public HeuristicsResults GetResults(AlgorithmRunResults results)
         {
-            var shortestPath = _shortestPathSolver.GetGraph(carver);
-            var stats = _mazeStatsGenerator.GetResultsFromMaze(carver);
+            var shortestPath = _shortestPathSolver.GetGraph(results.Carver);
             return new HeuristicsResults
             {
-                TotalCells = GetTotalSize(carver.Size),
+                TotalCells = GetTotalSize(results.Carver.Size),
                 ShortestPathResult = shortestPath,
-                MazeStats = stats
+                Stats = _mazeStatsGenerator.GetResultsFromMaze(results)
             };
         }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Assets.GameAssets.Scripts.Maze.Agents;
 using Assets.GameAssets.Scripts.Maze.Helper;
 using Assets.GameAssets.Scripts.Maze.Model;
 
@@ -18,6 +19,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
 
         public AlgorithmRunResults GenerateMaze(IMazeCarver maze, MazeGenerationSettings settings)
         {
+            var pointAndDirection = new List<DirectionAndPoint>();
             var randomPoint = _randomPointGenerator.RandomPoint(maze.Size);
             maze.JumpToPoint(randomPoint);
             var activeCells = new LinkedList<MazePoint>();
@@ -35,6 +37,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                     var carvedDirections = maze.AlreadyCarvedDirections();
                     if (!carvedDirections.Any())
                     {
+                        pointAndDirection.Add(new DirectionAndPoint { Direction = direction, MazePoint = currentPoint});
                         var oppositeDirection = _directionsFlagParser.OppositeDirection(direction);
                         maze.CarveInDirection(oppositeDirection);
                         activeCells.AddLast(maze.CurrentPoint);
@@ -50,7 +53,8 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
             }
             return new AlgorithmRunResults
             {
-                Carver = maze
+                Carver = maze,
+                DirectionsCarvedIn = pointAndDirection
             };
         }
     }

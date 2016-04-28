@@ -116,6 +116,7 @@
     <None Include="Assets\Zenject\OptionalExtras\SampleGame\Media\Imported\Shaders\Add_Layer.shader" />
     <None Include="Assets\Zenject\OptionalExtras\SampleGame\Media\Imported\Shaders\Particle Alpha Blend_IgnoreFog.shader" />
     <None Include="Assets\Zenject\Version.txt" />
+    <None Include="Assets\ustats\readme.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>

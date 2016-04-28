@@ -102,7 +102,7 @@ namespace Assets.GameAssets.Scripts.Maze.Factory
             HeuristicsResults heuristicsResults = null;
             var heuristicsTime = _timeRecorder.GetRunningTime(() =>
             {
-                heuristicsResults = _heuristicsGenerator.GetResults(carver);
+                heuristicsResults = _heuristicsGenerator.GetResults(results);
             });
 
             var times = new []{ modelBuildTime, generationTime, deadEndFillerTime, agentGenerationTime, heuristicsTime };
@@ -112,6 +112,7 @@ namespace Assets.GameAssets.Scripts.Maze.Factory
             {
                 MazeJumper = carver.CarvingFinished(),
                 HeuristicsResults = heuristicsResults,
+                DirectionsCarvedIn = results.DirectionsCarvedIn,
                 DeadEndFillerResults = deadEndFillerResults,
                 ModelTime = modelBuildTime,
                 AgentResults = result,

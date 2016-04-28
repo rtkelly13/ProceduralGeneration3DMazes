@@ -112,22 +112,28 @@ namespace Assets.GameAssets.Scripts.MazeLoading
                 _resourceLoader.InstantiateControl<TextControl>(rightPanel).Initialize(controlString);
             }
 
-            var maximumUse = _results.HeuristicsResults.MazeStats.Standard.MaximumUse;
-            var minumumUse = _results.HeuristicsResults.MazeStats.Standard.MinimumUse;
-            var heuristicsStrings = new List<String>()
+            var heuristicsStrings = new List<string>()
             {
                 "Heuristics",
-                String.Format("Total cells: {0}", _results.HeuristicsResults.TotalCells),
-                String.Format("Cells down dead end: {0}", _results.DeadEndFillerResults.TotalCellsFilledIn),
-                String.Format("Shortest path: {0}", _results.HeuristicsResults.ShortestPathResult.ShortestPath),
-                String.Format("Model Generation Time: {0}", _timeRecorder.GetStringFromTime(_results.ModelTime)),
-                String.Format("Maze Generation Time: {0}", _timeRecorder.GetStringFromTime(_results.GenerationTime)),
-                String.Format("Dead End Filling Time: {0}", _timeRecorder.GetStringFromTime(_results.DeadEndFillerTime)),
-                String.Format("Agent Run Time: {0}", _timeRecorder.GetStringFromTime(_results.AgentGenerationTime)),
-                String.Format("Heauristics Time: {0}", _timeRecorder.GetStringFromTime(_results.HeuristicsTime)),
-                String.Format("Total Time: {0}", _timeRecorder.GetStringFromTime(_results.TotalTime)),
+                string.Format("Total cells: {0}", _results.HeuristicsResults.TotalCells),
+                string.Format("Cells down dead end: {0}", _results.DeadEndFillerResults.TotalCellsFilledIn),
+                string.Format("Shortest path: {0}", _results.HeuristicsResults.ShortestPathResult.ShortestPath),
+                "Directions Carved"
             };
-            foreach (var heuristicsString in heuristicsStrings)
+
+            var directionStats =
+                _results.HeuristicsResults.Stats.DirectionsUsed.Select(x => string.Format("{0} - {1}", x.Key, x.Value));
+
+            var heuristicsStrings2 = new List<string>()
+            {
+                string.Format("Model Generation Time: {0}", _timeRecorder.GetStringFromTime(_results.ModelTime)),
+                string.Format("Maze Generation Time: {0}", _timeRecorder.GetStringFromTime(_results.GenerationTime)),
+                string.Format("Dead End Filling Time: {0}", _timeRecorder.GetStringFromTime(_results.DeadEndFillerTime)),
+                string.Format("Agent Run Time: {0}", _timeRecorder.GetStringFromTime(_results.AgentGenerationTime)),
+                string.Format("Heauristics Time: {0}", _timeRecorder.GetStringFromTime(_results.HeuristicsTime)),
+                string.Format("Total Time: {0}", _timeRecorder.GetStringFromTime(_results.TotalTime)),
+            };
+            foreach (var heuristicsString in heuristicsStrings.Concat(directionStats).Concat(heuristicsStrings2))
             {
                 _resourceLoader.InstantiateControl<TextControl>(leftPanel).Initialize(heuristicsString);
             }

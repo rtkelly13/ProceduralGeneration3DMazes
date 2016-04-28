@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.GameAssets.Scripts.Maze.Agents;
 using Assets.GameAssets.Scripts.Maze.Helper;
 using Assets.GameAssets.Scripts.Maze.Model;
 
@@ -21,15 +23,13 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
         {
             var randomPoint = _randomPointGenerator.RandomPoint(maze.Size);
             maze.JumpToPoint(randomPoint);
-            RecursiveBackTracker(maze);
-            return new AlgorithmRunResults
-            {
-                Carver = maze
-            };
+            return RecursiveBackTracker(maze);
+            
         }
 
-        public void RecursiveBackTracker(IMazeCarver carver)
+        public AlgorithmRunResults RecursiveBackTracker(IMazeCarver carver)
         {
+            var pointsAndDirections = new List<DirectionAndPoint>();
             var directions = carver.CarvableDirections().ToList();
             directions.Shuffle();
             var currentPoint = carver.CurrentPoint;
@@ -39,12 +39,18 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                 var carvedDirections = carver.AlreadyCarvedDirections();
                 if (!carvedDirections.Any())
                 {
+                    pointsAndDirections.Add(new DirectionAndPoint { Direction = direction, MazePoint = currentPoint });
                     var oppositeDirection = _directionsFlagParser.OppositeDirection(direction);
                     carver.CarveInDirection(oppositeDirection);
                     RecursiveBackTracker(carver);
                 }
                 carver.JumpToPoint(currentPoint);
             }
+            return new AlgorithmRunResults
+            {
+                Carver = carver,
+                DirectionsCarvedIn = pointsAndDirections
+            };
         }
     }
 }

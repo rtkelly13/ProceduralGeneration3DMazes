@@ -1,9 +1,9 @@
-﻿using Assets.GameAssets.Scripts.Maze.Model;
+﻿using Assets.GameAssets.Scripts.Maze.MazeGeneration;
 
 namespace Assets.GameAssets.Scripts.Maze.Heuristics
 {
     public interface IMazeStatsGenerator
     {
-        MazeStatsResults GetResultsFromMaze(IMazeCarver mazeCarver);
+        MazeStatsResult GetResultsFromMaze(AlgorithmRunResults results);
     }
 }
