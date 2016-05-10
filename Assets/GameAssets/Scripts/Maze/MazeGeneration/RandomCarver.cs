@@ -13,12 +13,14 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
         private readonly IRandomPointGenerator _randomPointGenerator;
         private readonly IPointsAndDirectionsRetriever _pointsAndDirectionsRetriever;
         private readonly IDirectionsFlagParser _directionsFlagParser;
+        private readonly IArrayHelper _arrayHelper;
 
-        public RandomCarver(IRandomPointGenerator randomPointGenerator, IPointsAndDirectionsRetriever pointsAndDirectionsRetriever, IDirectionsFlagParser directionsFlagParser)
+        public RandomCarver(IRandomPointGenerator randomPointGenerator, IPointsAndDirectionsRetriever pointsAndDirectionsRetriever, IDirectionsFlagParser directionsFlagParser, IArrayHelper arrayHelper)
         {
             _randomPointGenerator = randomPointGenerator;
             _pointsAndDirectionsRetriever = pointsAndDirectionsRetriever;
             _directionsFlagParser = directionsFlagParser;
+            _arrayHelper = arrayHelper;
         }
 
         public void CarveRandomWalls(IMazeCarver carver, WallCarverOption option, int numberOfWalls)
@@ -44,7 +46,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
         private void DeadEndCarver(IMazeCarver carver, int numberOfWalls, bool hasPreferredDirection)
         {
             var pointsAndDirections = _pointsAndDirectionsRetriever.GetDeadEnds(carver).ToList();
-            pointsAndDirections.Shuffle();
+            _arrayHelper.Shuffle(pointsAndDirections);
             foreach (var pointAndDirections in pointsAndDirections)
             {
                 if (numberOfWalls > 0)
@@ -79,7 +81,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
         {
             carver.JumpToPoint(point);
             var directions = carver.CarvableDirections().ToList();
-            directions.Shuffle();
+            _arrayHelper.Shuffle(directions);
             if (directions.Any())
             {
                 var selectedDirection = directions.Contains(preferredDirection)

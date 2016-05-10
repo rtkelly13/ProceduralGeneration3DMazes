@@ -9,10 +9,12 @@ namespace Assets.GameAssets.Scripts.Maze.Agents
     public class PerfectAgent : AgentBase
     {
         private readonly IDirectionsFlagParser _directionsFlagParser;
+        private readonly IArrayHelper _arrayHelper;
 
-        public PerfectAgent(IDirectionsFlagParser directionsFlagParser)
+        public PerfectAgent(IDirectionsFlagParser directionsFlagParser, IArrayHelper arrayHelper)
         {
             _directionsFlagParser = directionsFlagParser;
+            _arrayHelper = arrayHelper;
         }
 
         public override AgentResults RunAgentBase(IMaze maze)
@@ -39,7 +41,7 @@ namespace Assets.GameAssets.Scripts.Maze.Agents
                 return previousPoints;
             }
             var directions = maze.GetsDirectionsFromPoint().ToList();
-            directions.Shuffle();
+            _arrayHelper.Shuffle(directions);
             var currentPoint = maze.CurrentPoint;
             //check each direction for path to end
             foreach (var direction in directions)

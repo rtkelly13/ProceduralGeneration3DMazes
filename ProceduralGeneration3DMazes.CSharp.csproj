@@ -93,6 +93,7 @@
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\ModelInitialisationOptions.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Factory\ModelsWrapperFactory.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\DirectionsFlagParser.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\IArrayHelper.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\IDirectionsFlagParser.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\IMovementHelper.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\IPointValidity.cs" />
@@ -101,6 +102,7 @@
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\MovementHelper.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\PointValidity.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\RandomValueGenerator.cs" />
+    <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\ArrayHelper.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Helper\TimeRecorder.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Heuristics\DirectionResult.cs" />
     <Compile Include="Assets\GameAssets\Scripts\Maze\Heuristics\HeuristicsGenerator.cs" />

@@ -12,11 +12,13 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
     {
         private readonly IDirectionsFlagParser _directionsFlagParser;
         private readonly IRandomPointGenerator _randomPointGenerator;
+        private readonly IArrayHelper _arrayHelper;
 
-        public RecursiveBacktrackerAlgorithm(IDirectionsFlagParser directionsFlagParser, IRandomPointGenerator randomPointGenerator)
+        public RecursiveBacktrackerAlgorithm(IDirectionsFlagParser directionsFlagParser, IRandomPointGenerator randomPointGenerator, IArrayHelper arrayHelper)
         {
             _directionsFlagParser = directionsFlagParser;
             _randomPointGenerator = randomPointGenerator;
+            _arrayHelper = arrayHelper;
         }
 
         public AlgorithmRunResults GenerateMaze(IMazeCarver maze, MazeGenerationSettings settings)
@@ -31,7 +33,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
         {
             var pointsAndDirections = new List<DirectionAndPoint>();
             var directions = carver.CarvableDirections().ToList();
-            directions.Shuffle();
+            _arrayHelper.Shuffle(directions);
             var currentPoint = carver.CurrentPoint;
             foreach (var direction in directions)
             {

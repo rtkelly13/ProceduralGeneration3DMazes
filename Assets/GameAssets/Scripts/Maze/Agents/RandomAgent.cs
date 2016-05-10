@@ -10,13 +10,20 @@ namespace Assets.GameAssets.Scripts.Maze.Agents
 {
     public class RandomAgent : AgentBase 
     {
+        private readonly IArrayHelper _arrayHelper;
+
+        public RandomAgent(IArrayHelper arrayHelper)
+        {
+            _arrayHelper = arrayHelper;
+        }
+
         public override AgentResults RunAgentBase(IMaze maze)
         {
             var pointAndDirectionsList = new List<DirectionAndPoint>();
             while (!maze.CurrentPoint.Equals(maze.EndPoint))
             {
                 var directions = maze.GetsDirectionsFromPoint().ToList();
-                directions.Shuffle();
+                _arrayHelper.Shuffle(directions);
                 var first = directions.First();
                 pointAndDirectionsList.Add(new DirectionAndPoint { Direction = first, MazePoint = maze.CurrentPoint });
                 maze.MoveInDirection(first);
@@ -33,11 +40,13 @@ namespace Assets.GameAssets.Scripts.Maze.Agents
     {
         private readonly IPointsAndDirectionsRetriever _pointsAndDirectionsRetriever;
         private readonly IDirectionsFlagParser _directionsFlagParser;
+        private readonly IArrayHelper _arrayHelper;
 
-        public RandomAgent2(IPointsAndDirectionsRetriever pointsAndDirectionsRetriever, IDirectionsFlagParser directionsFlagParser)
+        public RandomAgent2(IPointsAndDirectionsRetriever pointsAndDirectionsRetriever, IDirectionsFlagParser directionsFlagParser, IArrayHelper arrayHelper)
         {
             _pointsAndDirectionsRetriever = pointsAndDirectionsRetriever;
             _directionsFlagParser = directionsFlagParser;
+            _arrayHelper = arrayHelper;
         }
 
         public override AgentResults RunAgentBase(IMaze maze)
@@ -46,7 +55,7 @@ namespace Assets.GameAssets.Scripts.Maze.Agents
             if (!maze.CurrentPoint.Equals(maze.EndPoint))
             {
                 var firstDirections = maze.GetsDirectionsFromPoint().ToList();
-                firstDirections.Shuffle();
+                _arrayHelper.Shuffle(firstDirections);
                 var first = firstDirections.First();
                 var currentPoint = maze.CurrentPoint;
                 maze.MoveInDirection(first);
@@ -57,7 +66,7 @@ namespace Assets.GameAssets.Scripts.Maze.Agents
                     var directions = maze.GetsDirectionsFromPoint().ToList();
                     var reverseDirection = _directionsFlagParser.OppositeDirection(lastDirectionMoved);
                     var filteredDirections = directions.Where(x => x != reverseDirection).ToList();
-                    filteredDirections.Shuffle();
+                    _arrayHelper.Shuffle(filteredDirections);
                     if (_pointsAndDirectionsRetriever.IsJunction(directions))
                     {
                         var direction = filteredDirections.First();

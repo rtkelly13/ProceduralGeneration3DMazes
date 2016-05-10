@@ -19,7 +19,6 @@ using Assets.GameAssets.Scripts.UI.Menu.Settings;
 using Assets.GameAssets.Scripts.UI.Menu.Settings.GrowingTree;
 using Assets.GameAssets.Scripts.UI.Menu.Validation;
 using Zenject;
-using AlgorithmsProvider = Assets.GameAssets.Scripts.Maze.Helper.AlgorithmsProvider;
 
 namespace Assets.GameAssets.Scripts
 {
@@ -95,7 +94,7 @@ namespace Assets.GameAssets.Scripts
             Container.Bind<ICameraManagement>().ToSingle<CameraManagementExtra>();
             Container.Bind<IGrowingTreeAlgorithm>().ToTransient<GrowingTreeAlgorithmLinkedList>();
             Container.Bind<IRecursiveBacktrackerAlgorithm>().ToTransient<BacktrackerAlgorithm>();
-
+            Container.Bind<IArrayHelper>().ToTransient<ArrayHelper>();
         }
     }
 }

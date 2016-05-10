@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Assets.GameAssets.Scripts.UI.Menu.Settings.GrowingTree
 {
-    class BinaryTreeSettingsBuilder: ISettingBuilder
+    public class BinaryTreeSettingsBuilder: ISettingBuilder
     {
         public Algorithm AlgorithmType { get; private set; }
         private MazeGenerationSettings _settings;

@@ -12,12 +12,14 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
         private readonly IRandomPointGenerator _randomPointGenerator;
         private readonly IRandomValueGenerator _randomValueGenerator;
         private readonly IDirectionsFlagParser _directionsFlagParser;
+        private readonly IArrayHelper _arrayHelper;
 
-        public GrowingTreeAlgorithm(IRandomPointGenerator randomPointGenerator, IRandomValueGenerator randomValueGenerator, IDirectionsFlagParser directionsFlagParser)
+        public GrowingTreeAlgorithm(IRandomPointGenerator randomPointGenerator, IRandomValueGenerator randomValueGenerator, IDirectionsFlagParser directionsFlagParser, IArrayHelper arrayHelper)
         {
             _randomPointGenerator = randomPointGenerator;
             _randomValueGenerator = randomValueGenerator;
             _directionsFlagParser = directionsFlagParser;
+            _arrayHelper = arrayHelper;
         }
 
         public AlgorithmRunResults GenerateMaze(IMazeCarver maze, MazeGenerationSettings settings)
@@ -40,7 +42,7 @@ namespace Assets.GameAssets.Scripts.Maze.MazeGeneration
                 var currentPoint = GetNextPoint(activeCells, strategies);
                 maze.JumpToPoint(currentPoint);
                 var carvableDirections = maze.CarvableDirections().ToList();
-                carvableDirections.Shuffle();
+                _arrayHelper.Shuffle(carvableDirections);
                 var carved = false;
                 foreach (var direction in carvableDirections)
                 {
