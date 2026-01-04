@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- Coverlet MSBuild settings -->
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    <CoverletOutput>./coverage/</CoverletOutput>
+    <!-- Include the test assembly itself since maze code is compiled into it -->
+    <IncludeTestAssembly>true</IncludeTestAssembly>
+    <!-- Exclude test classes from coverage -->
+    <ExcludeByAttribute>TestFixture</ExcludeByAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="NUnit.Analyzers" Version="3.10.0" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include maze logic files directly (avoiding Godot SDK dependency) -->
+    <Compile Include="..\scripts\maze\**\*.cs" Link="Maze\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\scripts\autoload\ServiceContainer.cs" Link="Autoload\ServiceContainer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include shared sample maze files as content -->
+    <Content Include="..\sample-data\*.maze" Link="sample-data\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,126 @@
+using System;
+using System.Linq;
+using ProceduralMaze.Maze.Agents;
+using ProceduralMaze.Maze.Helper;
+using ProceduralMaze.Maze.Heuristics;
+using ProceduralMaze.Maze.Generation;
+using ProceduralMaze.Maze.Model;
+
+namespace ProceduralMaze.Maze.Factory
+{
+    public class MazeGenerationFactory : IMazeGenerationFactory
+    {
+        private readonly IMazeModelFactory _mazeModelFactory;
+        private readonly IGrowingTreeAlgorithm _growingTreeAlgorithm;
+        private readonly IMazeFactory _mazeFactory;
+        private readonly IDeadEndFiller _deadEndFiller;
+        private readonly IRandomCarver _randomCarver;
+        private readonly IWallRemovalCalculator _wallRemovalCalculator;
+        private readonly IRecursiveBacktrackerAlgorithm _recursiveBacktrackerAlgorithm;
+        private readonly IBinaryTreeAlgorithm _binaryTreeAlgorithm;
+        private readonly IHeuristicsGenerator _heuristicsGenerator;
+        private readonly IAgentFactory _agentFactory;
+        private readonly ITimeRecorder _timeRecorder;
+
+        public MazeGenerationFactory(
+            IMazeModelFactory mazeModelFactory,
+            IGrowingTreeAlgorithm growingTreeAlgorithm,
+            IMazeFactory mazeFactory,
+            IDeadEndFiller deadEndFiller,
+            IRandomCarver randomCarver,
+            IWallRemovalCalculator wallRemovalCalculator,
+            IRecursiveBacktrackerAlgorithm recursiveBacktrackerAlgorithm,
+            IBinaryTreeAlgorithm binaryTreeAlgorithm,
+            IHeuristicsGenerator heuristicsGenerator,
+            IAgentFactory agentFactory,
+            ITimeRecorder timeRecorder)
+        {
+            _mazeModelFactory = mazeModelFactory;
+            _growingTreeAlgorithm = growingTreeAlgorithm;
+            _mazeFactory = mazeFactory;
+            _deadEndFiller = deadEndFiller;
+            _randomCarver = randomCarver;
+            _wallRemovalCalculator = wallRemovalCalculator;
+            _recursiveBacktrackerAlgorithm = recursiveBacktrackerAlgorithm;
+            _binaryTreeAlgorithm = binaryTreeAlgorithm;
+            _heuristicsGenerator = heuristicsGenerator;
+            _agentFactory = agentFactory;
+            _timeRecorder = timeRecorder;
+        }
+
+        public MazeGenerationResults GenerateMaze(MazeGenerationSettings settings)
+        {
+            IMazeCarver carver = null!;
+            var modelBuildTime = _timeRecorder.GetRunningTime(() =>
+            {
+                var model = _mazeModelFactory.BuildMaze(settings);
+                carver = _mazeFactory.GetMazeCarver(model);
+            });
+
+            AlgorithmRunResults results = null!;
+            int wallsToRemove = 0;
+            var generationTime = _timeRecorder.GetRunningTime(() =>
+            {
+                switch (settings.Algorithm)
+                {
+                    case Algorithm.None:
+                        throw new ArgumentException("None not supported");
+                    case Algorithm.GrowingTreeAlgorithm:
+                        results = _growingTreeAlgorithm.GenerateMaze(carver, settings);
+                        break;
+                    case Algorithm.RecursiveBacktrackerAlgorithm:
+                        results = _recursiveBacktrackerAlgorithm.GenerateMaze(carver, settings);
+                        break;
+                    case Algorithm.BinaryTreeAlgorithm:
+                        results = _binaryTreeAlgorithm.GenerateMaze(carver, settings);
+                        break;
+                    default:
+                        throw new ArgumentException("Unsupported algorithm type");
+                }
+                carver = results.Carver;
+                var maxWallsToRemove = _wallRemovalCalculator.Calculate(carver.Size);
+                wallsToRemove = (int)((maxWallsToRemove * settings.WallRemovalPercent) / 100.0);
+                _randomCarver.CarveRandomWalls(carver, WallCarverOption.Random, wallsToRemove);
+            });
+
+            DeadEndFillerResult deadEndFillerResults = null!;
+            var deadEndFillerTime = _timeRecorder.GetRunningTime(() =>
+            {
+                deadEndFillerResults = _deadEndFiller.Fill(carver);
+            });
+
+            AgentResults? agentResult = null;
+            var agentGenerationTime = _timeRecorder.GetRunningTime(() =>
+            {
+                if (settings.AgentType != AgentType.None)
+                {
+                    agentResult = _agentFactory.MakeAgent(settings.AgentType).RunAgent(carver);
+                }
+            });
+
+            HeuristicsResults heuristicsResults = null!;
+            var heuristicsTime = _timeRecorder.GetRunningTime(() =>
+            {
+                heuristicsResults = _heuristicsGenerator.GetResults(results);
+            });
+
+            var times = new[] { modelBuildTime, generationTime, deadEndFillerTime, agentGenerationTime, heuristicsTime };
+            var totalTime = times.Aggregate(new TimeSpan(), (seed, value) => seed.Add(value));
+
+            return new MazeGenerationResults
+            {
+                MazeJumper = carver.CarvingFinished(),
+                HeuristicsResults = heuristicsResults,
+                DirectionsCarvedIn = results.DirectionsCarvedIn,
+                DeadEndFillerResults = deadEndFillerResults,
+                ModelTime = modelBuildTime,
+                AgentResults = agentResult,
+                GenerationTime = generationTime,
+                DeadEndFillerTime = deadEndFillerTime,
+                AgentGenerationTime = agentGenerationTime,
+                HeuristicsTime = heuristicsTime,
+                TotalTime = totalTime
+            };
+        }
+    }
+}

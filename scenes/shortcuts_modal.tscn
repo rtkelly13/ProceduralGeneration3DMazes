@@ -1,0 +1,405 @@
+[gd_scene load_steps=2 format=3 uid="uid://shortcuts_modal"]
+
+[ext_resource type="Script" path="res://scripts/ui/ShortcutsModal.cs" id="1"]
+
+[node name="ShortcutsModal" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1")
+
+[node name="Control" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="PanelContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -320.0
+offset_right = 300.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Keyboard Shortcuts"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 20
+
+[node name="HSeparator" type="HSeparator" parent="Control/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Control/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CategoriesContainer" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="NavigationSection" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NavigationTitle" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection"]
+layout_mode = 2
+text = "Navigation"
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="Nav1" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection/Nav1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "W/A/S/D"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection/Nav1"]
+layout_mode = 2
+text = "Pan view"
+
+[node name="Nav2" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection/Nav2"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Q / E"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection/Nav2"]
+layout_mode = 2
+text = "Zoom out / in"
+
+[node name="Nav3" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection/Nav3"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Mouse Wheel"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection/Nav3"]
+layout_mode = 2
+text = "Zoom"
+
+[node name="Nav4" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection/Nav4"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Z / X"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/NavigationSection/Nav4"]
+layout_mode = 2
+text = "Previous / next level (3D)"
+
+[node name="DisplaySection" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="DisplayTitle" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection"]
+layout_mode = 2
+text = "Display"
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="Disp1" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection/Disp1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "C"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection/Disp1"]
+layout_mode = 2
+text = "Toggle hide dead ends"
+
+[node name="Disp2" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection/Disp2"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "P"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection/Disp2"]
+layout_mode = 2
+text = "Toggle shortest path overlay"
+
+[node name="Disp3" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection/Disp3"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "G"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection/Disp3"]
+layout_mode = 2
+text = "Toggle graph overlay"
+
+[node name="Disp4" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection/Disp4"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "V"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/DisplaySection/Disp4"]
+layout_mode = 2
+text = "Toggle graph view mode"
+
+[node name="GraphViewSection" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="GraphViewTitle" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection"]
+layout_mode = 2
+text = "Graph View"
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="GV1" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection/GV1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "N / B"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection/GV1"]
+layout_mode = 2
+text = "Next / previous path"
+
+[node name="GV2" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection/GV2"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "M"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection/GV2"]
+layout_mode = 2
+text = "Show all paths"
+
+[node name="GV3" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection/GV3"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "J"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection/GV3"]
+layout_mode = 2
+text = "Cycle junction details"
+
+[node name="GV4" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection/GV4"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "T"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GraphViewSection/GV4"]
+layout_mode = 2
+text = "Toggle animation"
+
+[node name="AnimationSection" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="AnimationTitle" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection"]
+layout_mode = 2
+text = "Animation"
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="Anim1" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection/Anim1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Space"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection/Anim1"]
+layout_mode = 2
+text = "Play / pause"
+
+[node name="Anim2" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection/Anim2"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "< / >"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection/Anim2"]
+layout_mode = 2
+text = "Step backward / forward"
+
+[node name="Anim3" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection/Anim3"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "+ / -"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/AnimationSection/Anim3"]
+layout_mode = 2
+text = "Speed up / slow down"
+
+[node name="FileSection" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="FileTitle" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection"]
+layout_mode = 2
+text = "File"
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="File1" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection/File1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Ctrl+S"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection/File1"]
+layout_mode = 2
+text = "Quick export"
+
+[node name="File2" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection/File2"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Ctrl+Shift+S"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection/File2"]
+layout_mode = 2
+text = "Export as..."
+
+[node name="File3" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection/File3"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Ctrl+O"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/FileSection/File3"]
+layout_mode = 2
+text = "Import maze"
+
+[node name="GeneralSection" type="VBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="GeneralTitle" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection"]
+layout_mode = 2
+text = "General"
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="Gen1" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection/Gen1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "R"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection/Gen1"]
+layout_mode = 2
+text = "Regenerate maze"
+
+[node name="Gen2" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection/Gen2"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "H"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection/Gen2"]
+layout_mode = 2
+text = "Show / hide shortcuts"
+
+[node name="Gen3" type="HBoxContainer" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection"]
+layout_mode = 2
+
+[node name="Key" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection/Gen3"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Esc"
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+
+[node name="Desc" type="Label" parent="Control/Panel/MarginContainer/VBoxContainer/ScrollContainer/CategoriesContainer/GeneralSection/Gen3"]
+layout_mode = 2
+text = "Return to menu"
+
+[node name="CloseButton" type="Button" parent="Control/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Close (H)"

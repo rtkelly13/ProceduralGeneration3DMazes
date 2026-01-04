@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include maze logic files directly (avoiding Godot SDK dependency) -->
+    <Compile Include="..\scripts\maze\**\*.cs" Link="Maze\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\scripts\autoload\ServiceContainer.cs" Link="Autoload\ServiceContainer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy shared sample maze files to output directory -->
+    <None Include="..\sample-data\*.maze" Link="sample-data\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
