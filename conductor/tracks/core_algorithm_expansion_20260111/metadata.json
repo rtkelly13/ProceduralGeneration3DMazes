@@ -1,0 +1,8 @@
+{
+  "track_id": "core_algorithm_expansion_20260111",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-12T17:28:12Z",
+  "updated_at": "2026-01-12T17:28:12Z",
+  "description": "Core Algorithm Expansion (A* & Prim's)"
+}
