@@ -21,6 +21,7 @@ namespace ProceduralMaze.Maze.Factory
         private readonly IHeuristicsGenerator _heuristicsGenerator;
         private readonly IAgentFactory _agentFactory;
         private readonly ITimeRecorder _timeRecorder;
+        private readonly IMazeHelper _mazeHelper;
 
         public MazeGenerationFactory(
             IMazeModelFactory mazeModelFactory,
@@ -33,7 +34,8 @@ namespace ProceduralMaze.Maze.Factory
             IBinaryTreeAlgorithm binaryTreeAlgorithm,
             IHeuristicsGenerator heuristicsGenerator,
             IAgentFactory agentFactory,
-            ITimeRecorder timeRecorder)
+            ITimeRecorder timeRecorder,
+            IMazeHelper mazeHelper)
         {
             _mazeModelFactory = mazeModelFactory;
             _growingTreeAlgorithm = growingTreeAlgorithm;
@@ -46,6 +48,7 @@ namespace ProceduralMaze.Maze.Factory
             _heuristicsGenerator = heuristicsGenerator;
             _agentFactory = agentFactory;
             _timeRecorder = timeRecorder;
+            _mazeHelper = mazeHelper;
         }
 
         public MazeGenerationResults GenerateMaze(MazeGenerationSettings settings)
@@ -78,6 +81,8 @@ namespace ProceduralMaze.Maze.Factory
                         throw new ArgumentException("Unsupported algorithm type");
                 }
                 carver = results.Carver;
+                results.Metrics = CalculateMetrics(carver, results);
+                
                 var maxWallsToRemove = _wallRemovalCalculator.Calculate(carver.Size);
                 wallsToRemove = (int)((maxWallsToRemove * settings.WallRemovalPercent) / 100.0);
                 _randomCarver.CarveRandomWalls(carver, WallCarverOption.Random, wallsToRemove);
@@ -112,6 +117,8 @@ namespace ProceduralMaze.Maze.Factory
                 MazeJumper = carver.CarvingFinished(),
                 HeuristicsResults = heuristicsResults,
                 DirectionsCarvedIn = results.DirectionsCarvedIn,
+                Metrics = results.Metrics,
+                Heatmap = results.Heatmap,
                 DeadEndFillerResults = deadEndFillerResults,
                 ModelTime = modelBuildTime,
                 AgentResults = agentResult,
@@ -120,6 +127,30 @@ namespace ProceduralMaze.Maze.Factory
                 AgentGenerationTime = agentGenerationTime,
                 HeuristicsTime = heuristicsTime,
                 TotalTime = totalTime
+            };
+        }
+
+        private GenerationMetrics CalculateMetrics(IMazeCarver carver, AlgorithmRunResults results)
+        {
+            int deadEnds = 0;
+            int junctions = 0;
+            int totalConnections = 0;
+            int totalPoints = carver.Size.X * carver.Size.Y * carver.Size.Z;
+
+            _mazeHelper.DoForEachPoint(carver.Size, point => {
+                carver.JumpToPoint(point);
+                var connections = carver.AlreadyCarvedDirections().Length;
+                totalConnections += connections;
+                if (connections == 1) deadEnds++;
+                if (connections > 2) junctions++;
+            });
+
+            return new GenerationMetrics
+            {
+                Steps = results.DirectionsCarvedIn.Count,
+                DeadEnds = deadEnds,
+                Junctions = junctions,
+                BranchingFactor = totalPoints > 0 ? (double)totalConnections / totalPoints : 0
             };
         }
     }

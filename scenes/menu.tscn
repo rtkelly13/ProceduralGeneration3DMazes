@@ -328,6 +328,12 @@ layout_mode = 2
 custom_minimum_size = Vector2(150, 40)
 text = "Reset Defaults"
 
+[node name="ComparisonButton" type="Button" parent="MarginContainer/VBoxContainer/BottomContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(150, 40)
+text = "Compare Algos"
+
 [node name="ImportButton" type="Button" parent="MarginContainer/VBoxContainer/BottomContainer"]
 unique_name_in_owner = true
 layout_mode = 2

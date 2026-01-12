@@ -1,0 +1,181 @@
+[gd_scene load_steps=2 format=3 uid="uid://comparison_dashboard_placeholder"]
+
+[ext_resource type="Script" path="res://scripts/ui/ComparisonController.cs" id="1"]
+
+[node name="ComparisonDashboard" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.12, 1)
+
+[node name="MainLayout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="TopPanel" type="PanelContainer" parent="MainLayout"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/TopPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/TopPanel/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="Controls" type="HBoxContainer" parent="MainLayout/TopPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BackButton" type="Button" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+custom_minimum_size = Vector2(60, 30)
+layout_mode = 2
+text = "Back"
+
+[node name="VSeparator0" type="VSeparator" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+
+[node name="LabelA" type="Label" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+text = "Algo A:"
+
+[node name="AlgorithmAOption" type="OptionButton" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+selected = 0
+
+[node name="VSeparator" type="VSeparator" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+
+[node name="LabelB" type="Label" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+text = "Algo B:"
+
+[node name="AlgorithmBOption" type="OptionButton" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+selected = 0
+
+[node name="VSeparator2" type="VSeparator" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+
+[node name="HeatmapCheck" type="CheckButton" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+text = "Heatmap"
+
+[node name="VSeparator3" type="VSeparator" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+
+[node name="StartButton" type="Button" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+text = "Start"
+
+[node name="ResetButton" type="Button" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+custom_minimum_size = Vector2(60, 30)
+layout_mode = 2
+text = "Reset"
+
+[node name="VSeparator4" type="VSeparator" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="MainLayout/TopPanel/Margin/VBox/Controls"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+text = "Status: Ready"
+
+[node name="InfoLabel" type="Label" parent="MainLayout/TopPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "Note: Visualization shows 2D projection of first floor."
+horizontal_alignment = 1
+
+[node name="Split" type="HBoxContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 2
+
+[node name="LeftContainer" type="SubViewportContainer" parent="MainLayout/Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+stretch = true
+
+[node name="LeftViewport" type="SubViewport" parent="MainLayout/Split/LeftContainer"]
+handle_input_locally = false
+size = Vector2i(2, 2)
+render_target_update_mode = 4
+
+[node name="HeatmapA" type="Node2D" parent="MainLayout/Split/LeftContainer/LeftViewport"]
+
+[node name="LeftMetricsPanel" type="PanelContainer" parent="MainLayout/Split/LeftContainer"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 150.0
+offset_bottom = 100.0
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/Split/LeftContainer/LeftMetricsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="MetricsALabel" type="Label" parent="MainLayout/Split/LeftContainer/LeftMetricsPanel/Margin"]
+layout_mode = 2
+text = "Steps: 0
+Dead Ends: 0
+Branching: 0
+Gen Time: 0ms"
+
+[node name="RightContainer" type="SubViewportContainer" parent="MainLayout/Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+stretch = true
+
+[node name="RightViewport" type="SubViewport" parent="MainLayout/Split/RightContainer"]
+handle_input_locally = false
+size = Vector2i(2, 2)
+render_target_update_mode = 4
+
+[node name="HeatmapB" type="Node2D" parent="MainLayout/Split/RightContainer/RightViewport"]
+
+[node name="RightMetricsPanel" type="PanelContainer" parent="MainLayout/Split/RightContainer"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 150.0
+offset_bottom = 100.0
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/Split/RightContainer/RightMetricsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="MetricsBLabel" type="Label" parent="MainLayout/Split/RightContainer/RightMetricsPanel/Margin"]
+layout_mode = 2
+text = "Steps: 0
+Dead Ends: 0
+Branching: 0
+Gen Time: 0ms"

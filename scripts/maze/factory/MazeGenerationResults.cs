@@ -20,5 +20,7 @@ namespace ProceduralMaze.Maze.Factory
         public TimeSpan HeuristicsTime { get; set; }
         public TimeSpan TotalTime { get; set; }
         public List<DirectionAndPoint> DirectionsCarvedIn { get; set; } = new();
+        public GenerationMetrics Metrics { get; set; } = new();
+        public Dictionary<MazePoint, int> Heatmap { get; set; } = new();
     }
 }

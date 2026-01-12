@@ -129,7 +129,8 @@ namespace ProceduralMaze.Autoload
                 BinaryTreeAlgorithm,
                 HeuristicsGenerator,
                 AgentFactory,
-                TimeRecorder);
+                TimeRecorder,
+                MazeHelper);
 
             // Serialization classes
             MazeSerializer = new MazeSerializer();

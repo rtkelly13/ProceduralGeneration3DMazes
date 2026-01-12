@@ -21,6 +21,7 @@ namespace ProceduralMaze.Maze.Generation
         public AlgorithmRunResults GenerateMaze(IMazeCarver maze, MazeGenerationSettings settings)
         {
             var pointAndDirection = new List<DirectionAndPoint>();
+            var heatmap = new Dictionary<MazePoint, int>();
             var randomPoint = _randomPointGenerator.RandomPoint(maze.Size);
             maze.JumpToPoint(randomPoint);
             var activeCells = new LinkedList<MazePoint>();
@@ -28,6 +29,8 @@ namespace ProceduralMaze.Maze.Generation
             while (activeCells.Any())
             {
                 var currentPoint = activeCells.Last!.Value;
+                heatmap[currentPoint] = heatmap.GetValueOrDefault(currentPoint) + 1;
+                
                 maze.JumpToPoint(currentPoint);
                 var carvableDirections = maze.CarvableDirections();
                 ArrayHelper.Shuffle(carvableDirections);
@@ -55,7 +58,8 @@ namespace ProceduralMaze.Maze.Generation
             return new AlgorithmRunResults
             {
                 Carver = maze,
-                DirectionsCarvedIn = pointAndDirection
+                DirectionsCarvedIn = pointAndDirection,
+                Heatmap = heatmap
             };
         }
     }

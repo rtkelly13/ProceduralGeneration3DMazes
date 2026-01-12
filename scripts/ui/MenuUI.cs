@@ -49,6 +49,7 @@ namespace ProceduralMaze.UI
         private Button _randomizeAllButton = null!;
         private Button _resetButton = null!;
         private Button _importButton = null!;
+        private Button _comparisonButton = null!;
 
         // Import UI
         private FileDialog _importDialog = null!;
@@ -97,6 +98,7 @@ namespace ProceduralMaze.UI
             _randomizeAllButton = GetNode<Button>("%RandomizeAllButton");
             _resetButton = GetNode<Button>("%ResetButton");
             _importButton = GetNode<Button>("%ImportButton");
+            _comparisonButton = GetNode<Button>("%ComparisonButton");
 
             // Import dialog and toast
             _importDialog = GetNode<FileDialog>("%ImportDialog");
@@ -151,6 +153,7 @@ namespace ProceduralMaze.UI
             _resetButton.Pressed += OnResetPressed;
             _importButton.Pressed += OnImportPressed;
             _importDialog.FileSelected += OnImportFileSelected;
+            _comparisonButton.Pressed += () => GetTree().ChangeSceneToFile("res://scenes/comparison_dashboard.tscn");
 
             // Load current settings
             LoadCurrentSettings();
