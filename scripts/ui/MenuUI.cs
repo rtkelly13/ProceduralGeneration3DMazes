@@ -4,6 +4,8 @@ using ProceduralMaze.Maze;
 using ProceduralMaze.Maze.Agents;
 using ProceduralMaze.Maze.Factory;
 using ProceduralMaze.Maze.Model;
+using ProceduralMaze.Maze.Solver;
+using ProceduralMaze.Maze.Solver.Heuristics;
 
 namespace ProceduralMaze.UI
 {
@@ -32,6 +34,8 @@ namespace ProceduralMaze.UI
         private Button _wallRemovalPreset11 = null!;
         private Button _wallRemovalPreset15 = null!;
         private OptionButton _agentOption = null!;
+        private OptionButton _solverOption = null!;
+        private OptionButton _heuristicOption = null!;
 
         // Right panel controls (algorithm settings)
         private HSlider _newestSlider = null!;
@@ -83,6 +87,8 @@ namespace ProceduralMaze.UI
             _wallRemovalPreset11 = GetNode<Button>("%Preset11");
             _wallRemovalPreset15 = GetNode<Button>("%Preset15");
             _agentOption = GetNode<OptionButton>("%AgentOption");
+            _solverOption = GetNode<OptionButton>("%SolverOption");
+            _heuristicOption = GetNode<OptionButton>("%HeuristicOption");
 
             _newestSlider = GetNode<HSlider>("%NewestSlider");
             _oldestSlider = GetNode<HSlider>("%OldestSlider");
@@ -119,6 +125,8 @@ namespace ProceduralMaze.UI
             SetupAlgorithmDropdown();
             SetupMazeTypeDropdown();
             SetupAgentDropdown();
+            SetupSolverDropdown();
+            SetupHeuristicDropdown();
             SetupTooltips();
 
             // Connect signals
@@ -141,6 +149,8 @@ namespace ProceduralMaze.UI
             _wallRemovalPreset11.Pressed += () => SetWallRemovalPercent(11);
             _wallRemovalPreset15.Pressed += () => SetWallRemovalPercent(15);
             _agentOption.ItemSelected += OnAgentSelected;
+            _solverOption.ItemSelected += OnSolverSelected;
+            _heuristicOption.ItemSelected += OnHeuristicSelected;
 
             _newestSlider.ValueChanged += v => OnWeightSliderChanged(v, val => GameState.Instance!.Settings.GrowingTreeSettings!.NewestWeight = val, _newestValue);
             _oldestSlider.ValueChanged += v => OnWeightSliderChanged(v, val => GameState.Instance!.Settings.GrowingTreeSettings!.OldestWeight = val, _oldestValue);
@@ -166,6 +176,7 @@ namespace ProceduralMaze.UI
             _algorithmOption.AddItem("Growing Tree Algorithm", (int)Algorithm.GrowingTreeAlgorithm);
             _algorithmOption.AddItem("Recursive Backtracker", (int)Algorithm.RecursiveBacktrackerAlgorithm);
             _algorithmOption.AddItem("Binary Tree Algorithm", (int)Algorithm.BinaryTreeAlgorithm);
+            _algorithmOption.AddItem("Prim's Algorithm", (int)Algorithm.PrimsAlgorithm);
         }
 
         private void SetupMazeTypeDropdown()
@@ -182,6 +193,20 @@ namespace ProceduralMaze.UI
             _agentOption.AddItem("None", (int)AgentType.None);
             _agentOption.AddItem("Random Agent", (int)AgentType.Random);
             _agentOption.AddItem("Perfect Agent", (int)AgentType.Perfect);
+        }
+
+        private void SetupSolverDropdown()
+        {
+            _solverOption.Clear();
+            _solverOption.AddItem("Dijkstra (Standard)", (int)SolverType.Dijkstra);
+            _solverOption.AddItem("A* (Optimized)", (int)SolverType.AStar);
+        }
+
+        private void SetupHeuristicDropdown()
+        {
+            _heuristicOption.Clear();
+            _heuristicOption.AddItem("Manhattan Distance", (int)HeuristicType.Manhattan);
+            _heuristicOption.AddItem("Euclidean Distance", (int)HeuristicType.Euclidean);
         }
 
         private void SetupTooltips()
@@ -216,6 +241,16 @@ namespace ProceduralMaze.UI
                 "Random Agent: Explores randomly, avoids immediate backtracking.\n" +
                 "Perfect Agent: Finds optimal path using depth-first search.";
 
+            // Solver dropdown
+            _solverOption.TooltipText = "Algorithm used to solve the maze for metrics and agents.\n" +
+                "Dijkstra: Standard BFS-based solver.\n" +
+                "A*: Informed search using a heuristic for faster results.";
+
+            // Heuristic dropdown
+            _heuristicOption.TooltipText = "Distance metric used by the A* solver.\n" +
+                "Manhattan: Grid-based distance (best for cardinal movement).\n" +
+                "Euclidean: Straight-line distance (best for any-angle movement).";
+
             // Growing Tree weight sliders
             _newestSlider.TooltipText = "Weight for picking the newest cell (most recently added).\n" +
                 "High values = Recursive Backtracker behavior with long, winding passages.";
@@ -234,6 +269,8 @@ namespace ProceduralMaze.UI
             SelectOptionById(_algorithmOption, (int)settings.Algorithm);
             SelectOptionById(_mazeTypeOption, (int)settings.Option);
             SelectOptionById(_agentOption, (int)settings.AgentType);
+            SelectOptionById(_solverOption, (int)settings.SolverType);
+            SelectOptionById(_heuristicOption, (int)settings.HeuristicType);
 
             // Set size sliders
             _xSlider.Value = settings.Size.X;
@@ -335,6 +372,20 @@ namespace ProceduralMaze.UI
             Validate();
         }
 
+        private void OnSolverSelected(long index)
+        {
+            if (GameState.Instance == null) return;
+            GameState.Instance.Settings.SolverType = (SolverType)_solverOption.GetItemId((int)index);
+            Validate();
+        }
+
+        private void OnHeuristicSelected(long index)
+        {
+            if (GameState.Instance == null) return;
+            GameState.Instance.Settings.HeuristicType = (HeuristicType)_heuristicOption.GetItemId((int)index);
+            Validate();
+        }
+
         private void Validate()
         {
             var settings = GameState.Instance?.Settings;
@@ -383,7 +434,12 @@ namespace ProceduralMaze.UI
             var settings = GameState.Instance.Settings;
 
             // Randomize algorithm
-            var algorithms = new[] { Algorithm.GrowingTreeAlgorithm, Algorithm.RecursiveBacktrackerAlgorithm, Algorithm.BinaryTreeAlgorithm };
+            var algorithms = new[] { 
+                Algorithm.GrowingTreeAlgorithm, 
+                Algorithm.RecursiveBacktrackerAlgorithm, 
+                Algorithm.BinaryTreeAlgorithm,
+                Algorithm.PrimsAlgorithm 
+            };
             settings.Algorithm = algorithms[_random.Next(algorithms.Length)];
 
             // Randomize size (reasonable range: 5-50)
@@ -404,6 +460,14 @@ namespace ProceduralMaze.UI
             // Randomize agent
             var agentTypes = new[] { AgentType.None, AgentType.Random, AgentType.Perfect };
             settings.AgentType = agentTypes[_random.Next(agentTypes.Length)];
+
+            // Randomize solver
+            var solverTypes = new[] { SolverType.Dijkstra, SolverType.AStar };
+            settings.SolverType = solverTypes[_random.Next(solverTypes.Length)];
+
+            // Randomize heuristic
+            var heuristicTypes = new[] { HeuristicType.Manhattan, HeuristicType.Euclidean };
+            settings.HeuristicType = heuristicTypes[_random.Next(heuristicTypes.Length)];
 
             LoadCurrentSettings();
             Validate();
@@ -440,6 +504,8 @@ namespace ProceduralMaze.UI
                 DoorsAtEdge = false,
                 WallRemovalPercent = 0,
                 AgentType = AgentType.None,
+                SolverType = SolverType.Dijkstra,
+                HeuristicType = HeuristicType.Manhattan,
                 GrowingTreeSettings = new GrowingTreeSettings
                 {
                     NewestWeight = 100,

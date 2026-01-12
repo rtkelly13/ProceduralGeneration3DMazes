@@ -39,9 +39,11 @@ namespace ProceduralMaze.Autoload
         public IGrowingTreeAlgorithm GrowingTreeAlgorithm { get; }
         public IRecursiveBacktrackerAlgorithm RecursiveBacktrackerAlgorithm { get; }
         public IBinaryTreeAlgorithm BinaryTreeAlgorithm { get; }
+        public IPrimsAlgorithm PrimsAlgorithm { get; }
 
         // Solver classes
         public IGraphBuilder GraphBuilder { get; }
+        public ISolverFactory SolverFactory { get; }
         public IShortestPathSolver ShortestPathSolver { get; }
         public IKShortestPathsSolver KShortestPathsSolver { get; }
         public DijkstraAnimator DijkstraAnimator { get; }
@@ -101,9 +103,11 @@ namespace ProceduralMaze.Autoload
             GrowingTreeAlgorithm = new GrowingTreeAlgorithmLinkedList(RandomPointGenerator, RandomValueGenerator, DirectionsFlagParser);
             RecursiveBacktrackerAlgorithm = new BacktrackerAlgorithm(DirectionsFlagParser, RandomPointGenerator);
             BinaryTreeAlgorithm = new BinaryTreeAlgorithm(DirectionsFlagParser, RandomPointGenerator);
+            PrimsAlgorithm = new PrimsAlgorithm(DirectionsFlagParser, RandomPointGenerator, RandomValueGenerator);
 
             // Solver classes
             GraphBuilder = new GraphBuilder(PointsAndDirectionsRetriever, DirectionsFlagParser);
+            SolverFactory = new SolverFactory(GraphBuilder);
             ShortestPathSolver = new ShortestPathSolver(GraphBuilder);
             KShortestPathsSolver = new KShortestPathsSolver(GraphBuilder);
             DijkstraAnimator = new DijkstraAnimator(GraphBuilder);
@@ -113,7 +117,7 @@ namespace ProceduralMaze.Autoload
 
             // Heuristics classes
             MazeStatsGenerator = new MazeStatsGenerator(DirectionsFlagParser);
-            HeuristicsGenerator = new HeuristicsGenerator(ShortestPathSolver, MazeStatsGenerator);
+            HeuristicsGenerator = new HeuristicsGenerator(SolverFactory, MazeStatsGenerator);
 
             // Remaining factory classes
             MazeFactory = new MazeFactory(PointValidity, MovementHelper, DirectionsFlagParser, RandomPointGenerator, ModelsWrapperFactory, DeadEndModelWrapperFactory, PointsAndDirectionsRetriever);
@@ -127,6 +131,7 @@ namespace ProceduralMaze.Autoload
                 WallRemovalCalculator,
                 RecursiveBacktrackerAlgorithm,
                 BinaryTreeAlgorithm,
+                PrimsAlgorithm,
                 HeuristicsGenerator,
                 AgentFactory,
                 TimeRecorder,

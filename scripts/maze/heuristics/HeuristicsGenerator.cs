@@ -6,18 +6,20 @@ namespace ProceduralMaze.Maze.Heuristics
 {
     public class HeuristicsGenerator : IHeuristicsGenerator
     {
-        private readonly IShortestPathSolver _shortestPathSolver;
+        private readonly ISolverFactory _solverFactory;
         private readonly IMazeStatsGenerator _mazeStatsGenerator;
 
-        public HeuristicsGenerator(IShortestPathSolver shortestPathSolver, IMazeStatsGenerator mazeStatsGenerator)
+        public HeuristicsGenerator(ISolverFactory solverFactory, IMazeStatsGenerator mazeStatsGenerator)
         {
-            _shortestPathSolver = shortestPathSolver;
+            _solverFactory = solverFactory;
             _mazeStatsGenerator = mazeStatsGenerator;
         }
 
-        public HeuristicsResults GetResults(AlgorithmRunResults results)
+        public HeuristicsResults GetResults(AlgorithmRunResults results, MazeGenerationSettings settings)
         {
-            var shortestPath = _shortestPathSolver.GetGraph(results.Carver);
+            var solver = _solverFactory.CreateSolver(settings.SolverType, settings.HeuristicType);
+            var shortestPath = solver.GetGraph(results.Carver);
+
             return new HeuristicsResults
             {
                 TotalCells = GetTotalSize(results.Carver.Size),

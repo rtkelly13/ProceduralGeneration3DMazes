@@ -18,6 +18,7 @@ namespace ProceduralMaze.Maze.Factory
         private readonly IWallRemovalCalculator _wallRemovalCalculator;
         private readonly IRecursiveBacktrackerAlgorithm _recursiveBacktrackerAlgorithm;
         private readonly IBinaryTreeAlgorithm _binaryTreeAlgorithm;
+        private readonly IPrimsAlgorithm _primsAlgorithm;
         private readonly IHeuristicsGenerator _heuristicsGenerator;
         private readonly IAgentFactory _agentFactory;
         private readonly ITimeRecorder _timeRecorder;
@@ -32,6 +33,7 @@ namespace ProceduralMaze.Maze.Factory
             IWallRemovalCalculator wallRemovalCalculator,
             IRecursiveBacktrackerAlgorithm recursiveBacktrackerAlgorithm,
             IBinaryTreeAlgorithm binaryTreeAlgorithm,
+            IPrimsAlgorithm primsAlgorithm,
             IHeuristicsGenerator heuristicsGenerator,
             IAgentFactory agentFactory,
             ITimeRecorder timeRecorder,
@@ -45,6 +47,7 @@ namespace ProceduralMaze.Maze.Factory
             _wallRemovalCalculator = wallRemovalCalculator;
             _recursiveBacktrackerAlgorithm = recursiveBacktrackerAlgorithm;
             _binaryTreeAlgorithm = binaryTreeAlgorithm;
+            _primsAlgorithm = primsAlgorithm;
             _heuristicsGenerator = heuristicsGenerator;
             _agentFactory = agentFactory;
             _timeRecorder = timeRecorder;
@@ -77,6 +80,9 @@ namespace ProceduralMaze.Maze.Factory
                     case Algorithm.BinaryTreeAlgorithm:
                         results = _binaryTreeAlgorithm.GenerateMaze(carver, settings);
                         break;
+                    case Algorithm.PrimsAlgorithm:
+                        results = _primsAlgorithm.GenerateMaze(carver, settings);
+                        break;
                     default:
                         throw new ArgumentException("Unsupported algorithm type");
                 }
@@ -106,7 +112,7 @@ namespace ProceduralMaze.Maze.Factory
             HeuristicsResults heuristicsResults = null!;
             var heuristicsTime = _timeRecorder.GetRunningTime(() =>
             {
-                heuristicsResults = _heuristicsGenerator.GetResults(results);
+                heuristicsResults = _heuristicsGenerator.GetResults(results, settings);
             });
 
             var times = new[] { modelBuildTime, generationTime, deadEndFillerTime, agentGenerationTime, heuristicsTime };

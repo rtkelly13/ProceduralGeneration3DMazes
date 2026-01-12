@@ -12,6 +12,7 @@ tests/coveragereport/
 tests/TestResults/
 
 # Benchmark results
+BenchmarkDotNet.Artifacts/
 benchmarks/BenchmarkDotNet.Artifacts/
 
 # IDE files

@@ -310,6 +310,29 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Randomize Weights"
 
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+
+[node name="SolverSettingsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+text = "Solver Settings"
+
+[node name="SolverLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+text = "Path Solver"
+
+[node name="SolverOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HeuristicLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+text = "A* Heuristic"
+
+[node name="HeuristicOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/RightPanel"]
 layout_mode = 2
 size_flags_vertical = 3

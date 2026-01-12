@@ -4,6 +4,8 @@ using ProceduralMaze.Maze;
 using ProceduralMaze.Maze.Agents;
 using ProceduralMaze.Maze.Factory;
 using ProceduralMaze.Maze.Model;
+using ProceduralMaze.Maze.Solver;
+using ProceduralMaze.Maze.Solver.Heuristics;
 
 namespace ProceduralMaze.Tests;
 
@@ -303,6 +305,28 @@ public class MazeGenerationTests
 
 		// Assert
 		Assert.That(result.HeuristicsResults.TotalCells, Is.EqualTo(100));
+	}
+
+	[Test]
+	public void GenerateMaze_WithAStarSolver_CreatesValidMaze()
+	{
+		// Arrange
+		var settings = new MazeGenerationSettings
+		{
+			Algorithm = Algorithm.GrowingTreeAlgorithm,
+			Size = new MazeSize { X = 10, Y = 10, Z = 1 },
+			Option = MazeType.ArrayBidirectional,
+			SolverType = SolverType.AStar,
+			HeuristicType = HeuristicType.Manhattan,
+			GrowingTreeSettings = new GrowingTreeSettings { NewestWeight = 100 }
+		};
+
+		// Act
+		var result = _services.MazeGenerationFactory.GenerateMaze(settings);
+
+		// Assert
+		Assert.That(result, Is.Not.Null);
+		Assert.That(result.HeuristicsResults.ShortestPathResult.ShortestPath, Is.GreaterThan(0));
 	}
 
 	private MazeGenerationSettings CreateDefaultSettings(int x, int y, int z)

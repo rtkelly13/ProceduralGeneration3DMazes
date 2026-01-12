@@ -86,4 +86,11 @@ public class MazeGenerationBenchmarks
         var settings = CreateSettings(Algorithm.BinaryTreeAlgorithm);
         return _services.MazeGenerationFactory.GenerateMaze(settings);
     }
+
+    [Benchmark]
+    public MazeGenerationResults PrimsAlgorithm()
+    {
+        var settings = CreateSettings(Algorithm.PrimsAlgorithm);
+        return _services.MazeGenerationFactory.GenerateMaze(settings);
+    }
 }

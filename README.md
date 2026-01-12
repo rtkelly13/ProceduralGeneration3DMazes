@@ -35,10 +35,14 @@ dotnet build
 
 ### Running Tests
 
+Run all tests:
+
 ```bash
 cd tests
-dotnet test
+dotnet test --blame-hang-timeout 60s
 ```
+
+Run with coverage:
 
 ## Controls
 

@@ -18,4 +18,8 @@ namespace ProceduralMaze.Maze.Generation
     public interface IBinaryTreeAlgorithm : IMazeGenerationAlgorithm
     {
     }
+
+    public interface IPrimsAlgorithm : IMazeGenerationAlgorithm
+    {
+    }
 }
