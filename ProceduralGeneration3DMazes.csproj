@@ -9,11 +9,36 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
-  
+
+  <!--
+    Web-only settings. The .NET WASM runtime needs an executable entry point
+    (Program.cs) and runs with globalization data trimmed out (invariant mode).
+    None of this applies to the desktop/library build. See docs/WEB_EXPORT.md.
+  -->
+  <PropertyGroup Condition=" '$(GodotTargetPlatform)' == 'web' ">
+    <OutputType>Exe</OutputType>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Exclude test and experiment files from Godot build -->
     <Compile Remove="tests\**\*.cs" />
     <Compile Remove="experiments\**\*.cs" />
     <Compile Remove="benchmarks\**\*.cs" />
+  </ItemGroup>
+
+  <!--
+    Program.cs is the WASM entry point. It MUST NOT be compiled into the normal
+    (library) build, otherwise top-level statements trigger CS8805
+    ("Program using top-level statements must be an executable").
+  -->
+  <ItemGroup Condition=" '$(GodotTargetPlatform)' != 'web' ">
+    <Compile Remove="Program.cs" />
+  </ItemGroup>
+
+  <!-- Keep BCL bits the .NET WASM runtime resolves via reflection from being trimmed. -->
+  <ItemGroup Condition=" '$(GodotTargetPlatform)' == 'web' ">
+    <TrimmerRootAssembly Include="System.Private.CoreLib" />
+    <TrimmerRootAssembly Include="System.Runtime" />
   </ItemGroup>
 </Project>

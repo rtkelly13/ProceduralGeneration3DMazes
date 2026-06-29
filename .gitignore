@@ -6,6 +6,9 @@
 bin/
 obj/
 
+# Web export output
+build/
+
 # Test coverage output
 tests/coverage/
 tests/coveragereport/
