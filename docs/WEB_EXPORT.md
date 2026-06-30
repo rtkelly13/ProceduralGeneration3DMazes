@@ -110,11 +110,23 @@ Without these headers the canvas loads but fails to start its worker threads.
 Verified live (SSO/deployment protection disabled on this project only):
 `200`, `application/wasm` for `index.wasm`, COOP/COEP headers present.
 
+### CI/CD pipeline
+
+| Trigger | Workflow | What runs |
+|---|---|---|
+| Any PR / push to `main` | `test.yml` | `dotnet test` (fast Linux gate — mark this the required check) |
+| Push to `main` (or manual dispatch) | `web-export.yml` → `production` | Windows export → **production** deploy (`maze.ryankelly.dev`) |
+| Comment `/preview` on a PR | `web-export.yml` → `preview` | Windows export → **preview** deploy; URL posted back as a comment |
+
+The Windows export (the expensive step) is refactored into the composite action
+`.github/actions/export-web` and only runs on merge to `main` or an explicit
+`/preview` — never on every PR push. The patched-editor download is cached by fork
+tag. `/preview` is restricted to OWNER/MEMBER/COLLABORATOR comment authors.
+
 ### Continuous deployment
 
-The `deploy` job in the workflow publishes the export to the `maze` project after a
-successful export. It is **gated on three repo secrets** and skips cleanly until
-they're set:
+The deploy steps publish the export to the `maze` project after a successful export.
+They are **gated on three repo secrets** and skip cleanly until they're set:
 
 ```sh
 # Use a SCOPED Vercel token (Vercel → Account Settings → Tokens), not the broad CLI token.

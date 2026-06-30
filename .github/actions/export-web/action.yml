@@ -1,0 +1,137 @@
+name: "Export Godot C# project to Web (WASM)"
+description: >
+  Builds an experimental C#/.NET WebAssembly export using ComplexRobot's patched
+  Windows editor build. Must run on a windows-latest runner. Produces build/web.
+
+inputs:
+  godot_fork_tag:
+    description: "ComplexRobot/godot-dotnet-web-export release tag (editor + web templates)"
+    required: false
+    default: "4.7-stable"
+  template_version:
+    description: "Export-template version folder name (must match the editor build)"
+    required: false
+    default: "4.7.stable.mono"
+  github_token:
+    description: "Token for downloading the fork release via gh"
+    required: true
+
+outputs:
+  web_dir:
+    description: "Path to the exported web output"
+    value: "build/web"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up .NET 9 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: "9.0.x"
+
+    - name: Install wasm-tools workload
+      shell: pwsh
+      run: dotnet workload install wasm-tools
+
+    - name: Cache patched editor download
+      id: editorcache
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/godot-zip
+        key: godot-editor-${{ inputs.godot_fork_tag }}
+
+    - name: Download patched Godot editor (web-export fork)
+      if: steps.editorcache.outputs.cache-hit != 'true'
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+        FORK_REPO: ComplexRobot/godot-dotnet-web-export
+        FORK_TAG: ${{ inputs.godot_fork_tag }}
+      run: |
+        $asset = "Godot_v${env:FORK_TAG}_mono_web_export_win64.zip"
+        New-Item -ItemType Directory -Force -Path "${env:RUNNER_TEMP}/godot-zip" | Out-Null
+        Write-Host "Downloading $asset from $env:FORK_REPO@$env:FORK_TAG"
+        gh release download "$env:FORK_TAG" --repo "$env:FORK_REPO" --pattern "$asset" --dir "${env:RUNNER_TEMP}/godot-zip"
+
+    - name: Extract editor
+      shell: pwsh
+      run: |
+        $zip = Get-ChildItem "${env:RUNNER_TEMP}/godot-zip" -Filter *.zip | Select-Object -First 1
+        if (-not $zip) { throw "Editor zip not found (cache or download failed)." }
+        Expand-Archive -Path $zip.FullName -DestinationPath "${env:RUNNER_TEMP}/godot" -Force
+
+    - name: Locate editor executable and bundle contents
+      id: locate
+      shell: pwsh
+      run: |
+        $root = "$env:RUNNER_TEMP/godot"
+        $exe = Get-ChildItem -Path $root -Recurse -Filter "*.exe" |
+               Where-Object { $_.Name -match "console" } | Select-Object -First 1
+        if (-not $exe) {
+          $exe = Get-ChildItem -Path $root -Recurse -Filter "*.exe" |
+                 Where-Object { $_.Name -notmatch "crash|handler" } | Select-Object -First 1
+        }
+        if (-not $exe) { throw "Could not find a Godot editor executable in the fork zip." }
+        Write-Host "Editor exe: $($exe.FullName)"
+        "godot_exe=$($exe.FullName)" >> $env:GITHUB_OUTPUT
+        "bundle_dir=$($exe.Directory.FullName)" >> $env:GITHUB_OUTPUT
+
+    - name: Install web export templates (self-contained mode)
+      shell: pwsh
+      env:
+        TEMPLATE_VERSION: ${{ inputs.template_version }}
+      run: |
+        $bundle = "${{ steps.locate.outputs.bundle_dir }}"
+        New-Item -ItemType File -Force -Path (Join-Path $bundle "._sc_") | Out-Null
+        $tplDir = Join-Path $bundle "editor_data/export_templates/${env:TEMPLATE_VERSION}"
+        New-Item -ItemType Directory -Force -Path $tplDir | Out-Null
+        $templates = Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -Include "web_release.zip","web_debug.zip"
+        if (-not $templates) {
+          Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -File | Select-Object -ExpandProperty FullName
+          throw "No web_release.zip / web_debug.zip found in the fork bundle."
+        }
+        $templates | ForEach-Object { Copy-Item $_.FullName -Destination $tplDir -Force; Write-Host "Installed template: $($_.Name)" }
+        Write-Host "Templates in ${tplDir}:"; Get-ChildItem $tplDir
+
+    - name: Register bundled NuGet source (if present)
+      shell: pwsh
+      run: |
+        $nuget = Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -Directory -Filter "nuget" | Select-Object -First 1
+        if ($nuget) {
+          Write-Host "Adding local NuGet source: $($nuget.FullName)"
+          dotnet nuget add source "$($nuget.FullName)" --name godot-web-fork
+        } else {
+          Write-Host "No bundled nuget folder found; relying on nuget.org."
+        }
+
+    - name: Restore / build (net9.0)
+      shell: pwsh
+      run: dotnet build ProceduralGeneration3DMazes.csproj -c ExportRelease /p:GodotTargetPlatform=web
+
+    - name: Import resources (headless)
+      shell: pwsh
+      continue-on-error: true
+      run: |
+        & "${{ steps.locate.outputs.godot_exe }}" --headless --path . --import 2>&1 | Tee-Object -FilePath import.log
+
+    - name: Export Web (headless CLI)
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path "build/web" | Out-Null
+        & "${{ steps.locate.outputs.godot_exe }}" --headless --path . --export-release "Web" "build/web/index.html" 2>&1 | Tee-Object -FilePath export.log
+        if (-not (Test-Path "build/web/index.html")) {
+          Write-Host "::error::Export did not produce build/web/index.html — see export.log"
+          exit 1
+        }
+        Write-Host "Export output:"; Get-ChildItem build/web
+
+    - name: Upload web export artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: maze-web-export-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          build/web/**
+          export.log
+          import.log
+        if-no-files-found: warn
