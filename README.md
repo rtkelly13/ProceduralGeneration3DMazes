@@ -2,6 +2,8 @@
 
 A procedural maze generation system built with **Godot 4** and **C#**, featuring multiple algorithms, 3D maze support, and interactive visualization.
 
+🕹️ **Live demo:** <https://maze.ryankelly.dev> (experimental C#→WASM web export)
+
 ![Maze Screenshot](docs/images/screenshot-maze.png)
 
 ## Features
