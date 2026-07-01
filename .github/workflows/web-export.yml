@@ -1,15 +1,15 @@
 name: Web Export & Deploy
 
-# Builds the experimental C#/.NET WebAssembly export (Windows runner) and deploys
-# it to the `maze` Vercel project.
+# Builds the experimental C#/.NET WebAssembly export (Windows runner), deploys it to
+# the `maze` Vercel project, then smoke-tests that the deployed build actually boots.
 #
 #   * push to main / manual dispatch → PRODUCTION deploy (aliases maze.ryankelly.dev)
 #   * comment "/preview" on a PR      → on-demand PREVIEW deploy (unique URL, posted back)
 #
 # The fast test gate lives in test.yml and runs on every PR. The expensive Windows
-# export here only runs on merge to main or when explicitly requested via /preview,
-# to keep runner usage down. Deploy steps are gated on the VERCEL_* secrets and
-# skip cleanly until those are set — see docs/WEB_EXPORT.md.
+# export here only runs on merge to main or an explicit /preview, to keep runner
+# usage down (Windows minutes bill at a premium). Deploy steps are gated on the
+# VERCEL_* secrets and skip cleanly until those are set — see docs/WEB_EXPORT.md.
 
 on:
   push:
@@ -24,10 +24,11 @@ on:
       - "Program.cs"
       - ".github/workflows/web-export.yml"
       - ".github/actions/export-web/**"
+      - ".github/editor-checksums.txt"
   workflow_dispatch:
     inputs:
       godot_fork_tag:
-        description: "ComplexRobot/godot-dotnet-web-export release tag"
+        description: "Patched-editor release tag"
         required: true
         default: "4.7-stable"
       template_version:
@@ -49,6 +50,8 @@ jobs:
   production:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -64,30 +67,62 @@ jobs:
           template_version: ${{ github.event.inputs.template_version || '4.7.stable.mono' }}
           github_token: ${{ github.token }}
 
-      - name: Deploy to Vercel (production)
+      - name: Deploy to Vercel
+        id: deploy
         if: env.VERCEL_TOKEN != ''
         shell: pwsh
         run: |
           Copy-Item infra/vercel/vercel.json build/web/vercel.json -Force
           npm i -g vercel@latest
-          $url = (vercel deploy build/web --prod --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-          Write-Host "Production: $url"
+          # Only a run on main ships to production (aliases maze.ryankelly.dev).
+          # Any other ref (e.g. a manual dispatch on a feature branch to test the
+          # pipeline) deploys a throwaway preview instead of touching prod.
+          if ("${{ github.ref }}" -eq "refs/heads/main") {
+            $url = (vercel deploy build/web --prod --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
+            Write-Host "Production: $url"
+          } else {
+            $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
+            Write-Host "Preview (non-main run): $url"
+          }
+          "url=$url" >> $env:GITHUB_OUTPUT
 
       - name: Skip notice (no secrets)
         if: env.VERCEL_TOKEN == ''
         run: echo "::notice::VERCEL_* secrets not set — export ran but production deploy was skipped."
 
-  # ── Preview: on-demand via "/preview" comment on a PR ───────────────────────
+  smoke-production:
+    needs: production
+    if: needs.production.outputs.url != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Playwright (chromium)
+        run: |
+          npm i playwright
+          npx playwright install --with-deps chromium
+      - name: Smoke test the deployed build
+        env:
+          SMOKE_URL: ${{ needs.production.outputs.url }}
+        run: node .github/smoke/smoke.mjs
+
+  # ── Preview: on-demand via "/preview" comment on a PR (owner only) ──────────
   preview:
     if: >
       github.event_name == 'issue_comment' &&
       github.event.issue.pull_request &&
       startsWith(github.event.comment.body, '/preview') &&
-      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+      github.event.comment.author_association == 'OWNER'
     runs-on: windows-latest
     permissions:
       contents: read
       pull-requests: write
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -137,3 +172,37 @@ jobs:
         shell: pwsh
         run: |
           gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "/preview ran the export, but VERCEL_* secrets are not configured — deploy skipped."
+
+  smoke-preview:
+    needs: preview
+    if: needs.preview.outputs.url != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Playwright (chromium)
+        run: |
+          npm i playwright
+          npx playwright install --with-deps chromium
+      - name: Smoke test the preview build
+        id: smoke
+        env:
+          SMOKE_URL: ${{ needs.preview.outputs.url }}
+        run: node .github/smoke/smoke.mjs
+      - name: Report smoke result on PR
+        if: always()
+        run: |
+          if [ "${{ steps.smoke.outcome }}" = "success" ]; then
+            gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ Smoke test passed on the preview (boots, cross-origin isolated, canvas rendered)."
+          else
+            gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ Smoke test FAILED on the preview — the build served but did not boot correctly. Check the workflow logs."
+          fi

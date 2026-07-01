@@ -4,8 +4,12 @@ description: >
   Windows editor build. Must run on a windows-latest runner. Produces build/web.
 
 inputs:
+  fork_repo:
+    description: "Repo hosting the patched editor release (override to point at a mirror or, eventually, official support)"
+    required: false
+    default: "ComplexRobot/godot-dotnet-web-export"
   godot_fork_tag:
-    description: "ComplexRobot/godot-dotnet-web-export release tag (editor + web templates)"
+    description: "Patched-editor release tag (editor + web templates)"
     required: false
     default: "4.7-stable"
   template_version:
@@ -24,6 +28,22 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Guard against version drift
+      shell: pwsh
+      env:
+        TEMPLATE_VERSION: ${{ inputs.template_version }}
+      run: |
+        # The Godot.NET.Sdk version (csproj), the fork tag, and the export-template
+        # version must share a major.minor, or the export fails cryptically. Catch it early.
+        $csproj = Get-Content ProceduralGeneration3DMazes.csproj -Raw
+        if ($csproj -notmatch 'Godot\.NET\.Sdk/(\d+)\.(\d+)\.') { throw "Could not parse Godot.NET.Sdk version from csproj." }
+        $sdkMM = "$($Matches[1]).$($Matches[2])"
+        $tplMM = (($env:TEMPLATE_VERSION -split '\.')[0..1]) -join '.'
+        if ($sdkMM -ne $tplMM) {
+          throw "Version drift: Godot.NET.Sdk is $sdkMM but template_version is '$env:TEMPLATE_VERSION' ($tplMM). Align the csproj SDK version, the fork tag, and the template version — see docs/WEB_EXPORT.md."
+        }
+        Write-Host "Version check OK: Godot.NET.Sdk $sdkMM matches template $env:TEMPLATE_VERSION"
+
     - name: Set up .NET 9 SDK
       uses: actions/setup-dotnet@v4
       with:
@@ -45,7 +65,7 @@ runs:
       shell: pwsh
       env:
         GH_TOKEN: ${{ inputs.github_token }}
-        FORK_REPO: ComplexRobot/godot-dotnet-web-export
+        FORK_REPO: ${{ inputs.fork_repo }}
         FORK_TAG: ${{ inputs.godot_fork_tag }}
       run: |
         $asset = "Godot_v${env:FORK_TAG}_mono_web_export_win64.zip"
@@ -53,11 +73,26 @@ runs:
         Write-Host "Downloading $asset from $env:FORK_REPO@$env:FORK_TAG"
         gh release download "$env:FORK_TAG" --repo "$env:FORK_REPO" --pattern "$asset" --dir "${env:RUNNER_TEMP}/godot-zip"
 
+    - name: Verify editor checksum (supply-chain guard)
+      shell: pwsh
+      run: |
+        # Runs on both fresh downloads and cache hits — verifies the exact bytes we execute.
+        $zip = Get-ChildItem "${env:RUNNER_TEMP}/godot-zip" -Filter *.zip | Select-Object -First 1
+        if (-not $zip) { throw "Editor zip not found (cache or download failed)." }
+        $line = Get-Content .github/editor-checksums.txt |
+                Where-Object { $_ -notmatch '^\s*#' -and $_ -match [regex]::Escape($zip.Name) } | Select-Object -First 1
+        if (-not $line) { throw "No pinned checksum for '$($zip.Name)' in .github/editor-checksums.txt — refusing to run an unverified binary. See docs/WEB_EXPORT.md." }
+        $expected = (($line -split '\s+') | Where-Object { $_ })[0].ToLower()
+        $actual = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
+        if ($actual -ne $expected) {
+          throw "Checksum MISMATCH for $($zip.Name).`n  expected: $expected`n  actual:   $actual`nThe fork release may have been re-published — verify and update .github/editor-checksums.txt."
+        }
+        Write-Host "Checksum OK for $($zip.Name): $actual"
+
     - name: Extract editor
       shell: pwsh
       run: |
         $zip = Get-ChildItem "${env:RUNNER_TEMP}/godot-zip" -Filter *.zip | Select-Object -First 1
-        if (-not $zip) { throw "Editor zip not found (cache or download failed)." }
         Expand-Archive -Path $zip.FullName -DestinationPath "${env:RUNNER_TEMP}/godot" -Force
 
     - name: Locate editor executable and bundle contents

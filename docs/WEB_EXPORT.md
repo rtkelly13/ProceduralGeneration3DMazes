@@ -146,3 +146,86 @@ maze   CNAME   cname.vercel-dns.com
 
 Until then the alias is attached but won't resolve; the `*.vercel.app` URL works
 immediately. SSL for the custom domain provisions automatically once DNS resolves.
+
+### Post-deploy smoke test
+
+Both the production and preview deploys are followed by a Playwright smoke test
+(`.github/smoke/smoke.mjs`) that opens the *deployed* URL and asserts the build
+actually **boots** — not merely that files are served:
+
+- `crossOriginIsolated === true` and `SharedArrayBuffer` present (proves COOP/COEP
+  are effective — the whole hosting risk),
+- a `<canvas>` exists and the engine sizes it (boot signal),
+- no fatal WASM/runtime `pageerror`.
+
+A green deploy with a broken runtime therefore fails CI instead of silently shipping.
+
+---
+
+## Version matrix (keep these in lockstep)
+
+Three things are version-locked; a mismatch causes a cryptic export failure. The
+export action fails fast with a "version drift" error if the first two disagree.
+
+| Piece | Where | Current |
+|-------|-------|---------|
+| `Godot.NET.Sdk` | `ProceduralGeneration3DMazes.csproj` | `4.7.0` |
+| Export-template version | workflow `template_version` input | `4.7.stable.mono` |
+| Patched-editor release tag | workflow `godot_fork_tag` input | `4.7-stable` |
+| `.NET` SDK | `global.json` | `9.0.315` |
+| Editor binary SHA-256 | `.github/editor-checksums.txt` | pinned |
+
+When you bump Godot, **all four rows move together.**
+
+### Updating the pinned editor (fork bump)
+
+1. Pick the new fork release tag (must match a `Godot.NET.Sdk` version you can build with).
+2. Download its `Godot_v<tag>_mono_web_export_win64.zip` and record the hash:
+   ```sh
+   shasum -a 256 Godot_v<tag>_mono_web_export_win64.zip
+   ```
+   Add/replace the line in `.github/editor-checksums.txt`.
+3. Bump `Godot.NET.Sdk/<x.y.z>` in the `.csproj`, `template_version`, and
+   `godot_fork_tag` defaults; open the project once in the matching editor to
+   migrate `project.godot`.
+4. Open a PR and `/preview` it — the smoke test confirms the new toolchain boots.
+
+---
+
+## Maintenance & what to watch going forward
+
+The web export rests on **experimental, third-party** foundations. Treat it as
+something to monitor, not set-and-forget.
+
+- **Official .NET web export is the finish line.** Track godotengine/godot
+  [#118976](https://github.com/godotengine/godot/pull/118976) (static LibGodot) and
+  the prototype [#106125](https://github.com/godotengine/godot/pull/106125). **When
+  official web export ships, migrate off the fork** — repoint the composite action's
+  `fork_repo` (and drop the custom editor entirely if upstream templates suffice).
+- **Single-maintainer fork risk.** The editor comes from one community fork
+  (`ComplexRobot/godot-dotnet-web-export`). If it goes stale (no build for a Godot
+  version you need), you're stuck. Mitigations in place: the `fork_repo`/tag are
+  **inputs** (easy to repoint at a mirror), and the binary is **checksum-pinned**.
+  Recommended: **mirror the exact editor zip you rely on** to your own release/storage
+  so a deleted upstream release can't break CI.
+- **Runtime feature gaps can bite silently.** The patched runtime has **no
+  GDExtension**, **forced invariant globalization**, and **missing crypto BCL APIs**.
+  Code using culture-specific formatting/parsing or `System.Security.Cryptography`
+  will work on desktop and **fail only on web**. The smoke test catches a dead boot,
+  not subtle feature divergence — if you add such code, test it on web explicitly.
+- **Payload & caching.** The build is ~96 MB (54 MB `index.wasm` + 42 MB
+  `index.pck`). Vercel already serves it **Brotli-compressed**, and assets use
+  `must-revalidate` (ETag → 304), so there's no staleness. The remaining win —
+  `immutable` long-cache — needs **content-hashed filenames**, which the Godot export
+  uses fixed names for (`index.wasm`). That's the future improvement if load time
+  matters; don't set `immutable` on the fixed-name files or redeploys serve stale bytes.
+- **`/preview` trust boundary.** The command is restricted to **OWNER** comments and
+  checks out the PR head before running the composite action with secrets in scope.
+  Keep it owner-only; if you ever add trusted collaborators, consider running the
+  action from the base ref instead of PR head.
+- **Windows runner minutes.** The export runs on `windows-latest` (billed at a
+  premium) on every merge to `main` and every `/preview`. Editor download is cached
+  by fork tag. If minutes get tight, gate the production export to release tags only.
+- **Vercel token hygiene.** CI uses a scoped `VERCEL_TOKEN`. Rotate it periodically;
+  if it expires, deploys fail at the deploy step (export still succeeds) — re-run
+  `gh secret set VERCEL_TOKEN`.
