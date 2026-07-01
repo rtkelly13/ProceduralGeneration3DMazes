@@ -1,0 +1,8 @@
+# SHA-256 checksums for the patched Godot web-export editor (ComplexRobot fork).
+# The CI export verifies the downloaded editor zip against this list and fails on
+# mismatch — a supply-chain guard for the third-party binary we run.
+#
+# Format:  <sha256>  <asset filename>
+# To add/update an entry (e.g. when bumping the fork tag), see
+# docs/WEB_EXPORT.md → "Updating the pinned editor".
+b1f1b387dd45c6f3db35b336f58d40d6ea7ea0c8d7597d4fc26b493f4d12347c  Godot_v4.7-stable_mono_web_export_win64.zip
