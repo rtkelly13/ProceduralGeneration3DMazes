@@ -67,16 +67,24 @@ jobs:
           template_version: ${{ github.event.inputs.template_version || '4.7.stable.mono' }}
           github_token: ${{ github.token }}
 
-      - name: Deploy to Vercel (production)
+      - name: Deploy to Vercel
         id: deploy
         if: env.VERCEL_TOKEN != ''
         shell: pwsh
         run: |
           Copy-Item infra/vercel/vercel.json build/web/vercel.json -Force
           npm i -g vercel@latest
-          $url = (vercel deploy build/web --prod --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
+          # Only a run on main ships to production (aliases maze.ryankelly.dev).
+          # Any other ref (e.g. a manual dispatch on a feature branch to test the
+          # pipeline) deploys a throwaway preview instead of touching prod.
+          if ("${{ github.ref }}" -eq "refs/heads/main") {
+            $url = (vercel deploy build/web --prod --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
+            Write-Host "Production: $url"
+          } else {
+            $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
+            Write-Host "Preview (non-main run): $url"
+          }
           "url=$url" >> $env:GITHUB_OUTPUT
-          Write-Host "Production: $url"
 
       - name: Skip notice (no secrets)
         if: env.VERCEL_TOKEN == ''
