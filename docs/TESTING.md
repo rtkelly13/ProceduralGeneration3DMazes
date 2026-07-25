@@ -20,6 +20,33 @@ layer needs a Windows-built web export and a Vercel deploy. Only test in the bro
 fast and portable. Any code needing `using Godot;` cannot live here — that is the boundary, and
 it is why the scene layer exists.
 
+### Parallelism: fixtures are one instance per test
+
+The suite runs `[assembly: Parallelizable(ParallelScope.All)]` **and**
+`[assembly: FixtureLifeCycle(LifeCycle.InstancePerTestCase)]`
+([`tests/TestSetup.cs`](../tests/TestSetup.cs)). The second is not optional.
+
+With NUnit's default `SingleInstance`, `ParallelScope.All` runs a fixture's test cases
+concurrently **against a single fixture instance**, so every field assigned in `[SetUp]` is a
+data race between sibling tests. It cost real time to diagnose: two `RandomValueTests` failures
+on CI, `NullReferenceException` on `point.X`, passing on every local run and on a re-run of the
+same commit. The cause was a `[SetUp]` that re-reads its own mock field *after* configuring it,
+so a sibling's fresh-but-unconfigured mock could be captured instead; a loose Moq mock returns
+`null` for a reference type, and the null then surfaced far from its origin.
+
+Two things worth keeping:
+
+- **`InstancePerTestCase` is the fix, not `[NonParallelizable]`.** Marking the fixture serial
+  hides one instance of a whole-assembly problem — `MovementHelperTests` carried exactly that
+  workaround. A guard test now fails by name if the attribute is removed, because the natural
+  symptom is an occasional unexplained flake.
+- **Don't debug concurrency with `Console.WriteLine`.** NUnit captures output per test and
+  replays it attached to that test's result, which *reorders it into a false sequence* — the
+  first pass at this looked like proof that tests within a fixture ran serially. Append to a
+  file with a timestamp and thread id instead.
+
+Any `[OneTimeSetUp]`/`[OneTimeTearDown]` added later must be `static` under this lifecycle.
+
 ## Segregating behaviour from Godot
 
 The single highest-leverage thing for testability, and mostly already true of this codebase.
