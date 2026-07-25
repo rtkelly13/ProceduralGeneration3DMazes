@@ -25,9 +25,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      tests/scene/ holds the in-engine scene tests, which need the Godot SDK this project
+      deliberately avoids. They are compiled by the Godot project instead
+      (-p:IncludeSceneTests=true). Without this exclusion, default globbing pulls them in here
+      and the build fails on the missing Godot namespace.
+    -->
+    <Compile Remove="scene\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Include maze logic files directly (avoiding Godot SDK dependency) -->
     <Compile Include="..\scripts\maze\**\*.cs" Link="Maze\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\scripts\autoload\ServiceContainer.cs" Link="Autoload\ServiceContainer.cs" />
+    <!--
+      The test bridge's wire format is Godot-free precisely so it can be covered here.
+      TestBridge.cs itself is a Godot Node and cannot be compiled without the Godot SDK.
+    -->
+    <Compile Include="..\scripts\testing\TestBridgeProtocol.cs" Link="Testing\TestBridgeProtocol.cs" />
   </ItemGroup>
 
   <ItemGroup>

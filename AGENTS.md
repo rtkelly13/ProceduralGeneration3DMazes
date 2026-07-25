@@ -116,6 +116,23 @@ In Godot 2D rendering:
 3. Add tests in `tests/`
 4. Add UI in `scripts/ui/` and `scenes/`
 
+## Testing
+
+Four layers, each with a different cost. **Push tests down** — see
+[docs/TESTING.md](./docs/TESTING.md) for which to use.
+
+| Layer | Command | Needs |
+|---|---|---|
+| Unit (493 tests, ~10s) | `cd tests && dotnet test` | .NET only |
+| Scene / UI (in-engine) | `dotnet build -p:IncludeSceneTests=true` then `godot --headless --path . res://tests/scene/scene_tests.tscn` | Godot binary |
+| Functional (browser) | `cd tests/visual && npx playwright test --project=functional` | deployed build |
+| Visual | `cd tests/visual && npx playwright test --project=maze` | deployed build |
+
+`scripts/ui/` cannot be reached by the unit suite (it builds without the Godot SDK) — UI
+changes belong in scene tests. Browser tests need the in-app test bridge
+([docs/TEST_BRIDGE.md](./docs/TEST_BRIDGE.md)) because a Godot web export is a single
+`<canvas>` with no DOM for Playwright to query.
+
 ## Randomness & Determinism (read before touching generation)
 
 Maze generation is **seed-deterministic**: the same `MazeGenerationSettings.Seed` plus the

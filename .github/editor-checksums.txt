@@ -10,4 +10,7 @@
 #
 # To add an entry when bumping, see docs/WEB_EXPORT.md → "Updating the pinned editor".
 ad76e72610187b13e83229e863928c32689b1ba5dda34f5210940d563b89e473  Godot_v4.7.1-stable_mono_web_export_win64.zip
+# Official upstream Linux editor, used by the headless scene-test job (docs/TESTING.md).
+# Not the patched fork — plain Godot is enough to run in-engine tests.
+6ca7ff0459f1b806900be683c1b0837c607a9c16834c530dc68c81b9fc3ae1f6  Godot_v4.7.1-stable_mono_linux_x86_64.zip
 b1f1b387dd45c6f3db35b336f58d40d6ea7ea0c8d7597d4fc26b493f4d12347c  Godot_v4.7-stable_mono_web_export_win64.zip

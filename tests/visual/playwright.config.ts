@@ -60,6 +60,15 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "functional",
+      testMatch: /functional\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: process.env.MAZE_URL,
+        launchOptions,
+      },
+    },
+    {
       name: "maze",
       testMatch: /maze\.spec\.ts/,
       use: {

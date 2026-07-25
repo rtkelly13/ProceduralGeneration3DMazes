@@ -8,9 +8,11 @@ nothing.
 `toHaveScreenshot()` snapshot comparison — the standard for web visual regression. The repo
 already uses Playwright for the post-deploy smoke test, so this adds no new tool.
 
-**Status:** harness built and self-verified. The maze suite is **skipped** until the web
-build supports URL-parameter seeding (below) — deliberately skipped rather than failing, so
-it can't report a false red.
+**Status:** harness built and self-verified. URL-parameter seeding is now **implemented** by
+the in-app test bridge ([TEST_BRIDGE.md](./TEST_BRIDGE.md)). The maze suite remains **skipped**
+until a deploy confirms the bridge works under the patched export template — deliberately
+skipped rather than failing, so it can't report a false red. Flip `MAZE_TEST_BRIDGE=1` once
+confirmed.
 
 ## How this depends on the seeding work
 
@@ -23,41 +25,21 @@ unimplemented.
 Seeding is now in place in the C# core (`MazeGenerationSettings.Seed`). What's missing is a
 way to *reach* it from a URL.
 
-## Prerequisite: URL-parameter seeding
+## URL-parameter seeding (implemented)
 
-The suite loads `/?seed=20260725&algorithm=backtracker&x=10&y=10&z=1` and expects that exact
-maze. The web build must read those parameters at startup and apply them instead of using
-menu defaults or randomised settings.
+The suite loads `/?seed=20260725&algorithm=backtracker&x=10&y=10&z=1` and gets that exact
+maze. This is handled by [`scripts/testing/TestBridge.cs`](../scripts/testing/TestBridge.cs),
+which reads the query string on startup, applies it to `MazeGenerationSettings`, generates
+immediately and switches to the maze scene. The bridge activates automatically whenever a
+`seed` parameter is present, so these URLs need nothing extra.
 
-Sketch — Godot exposes the query string through `JavaScriptBridge`, which only exists on the
-web export, so it must be feature-guarded:
+Verified: the wire format has 54 unit tests, the bridge compiles against GodotSharp 4.7.1, and
+a headless scene test confirms seeded generation is deterministic through the same autoload
+path. **Not** verified: behaviour under the patched web export template — that needs a deploy,
+which is what `MAZE_TEST_BRIDGE` gates.
 
-```csharp
-// Web-only: JavaScriptBridge is not available on desktop builds.
-if (OS.HasFeature("web"))
-{
-    var search = JavaScriptBridge.Eval("window.location.search", true)?.ToString() ?? "";
-    // Parse ?seed=&algorithm=&x=&y=&z= and apply onto MazeGenerationSettings,
-    // then generate immediately, bypassing the menu.
-}
-```
-
-Requirements for the parameters to be regression-safe:
-
-1. **`seed` maps straight onto `MazeGenerationSettings.Seed`.** No re-randomising afterwards.
-2. **Generation happens once, on load**, with no menu interaction needed — the test can't
-   click through a UI reliably.
-3. **Invalid or absent parameters fall back to current behaviour**, so normal visitors are
-   unaffected.
-4. **The render settles.** Whatever intro animation or camera easing exists must reach a
-   fixed final frame; the harness waits for pixel stability and fails if it never settles.
-
-Once that ships, set `MAZE_SEEDING=1` in the workflow to un-skip the suite and generate
-baselines (below).
-
-> Not implemented here because building the web export requires the patched Windows editor
-> (see [WEB_EXPORT.md](./WEB_EXPORT.md)), so a Godot-side change could not be compiled or
-> verified in this environment. Specified rather than guessed at.
+Full contract, including the state fields these tests assert on:
+**[TEST_BRIDGE.md](./TEST_BRIDGE.md)**.
 
 ## Layout
 
@@ -65,6 +47,7 @@ baselines (below).
 |---|---|
 | `tests/visual/playwright.config.ts` | Projects, thresholds, fixed viewport/locale/timezone |
 | `tests/visual/maze.spec.ts` | The real suite — screenshots the deployed build |
+| `tests/visual/functional.spec.ts` | Behavioural tests via the bridge (see [TESTING.md](./TESTING.md)) |
 | `tests/visual/harness.spec.ts` | Self-test proving the harness works without a Godot build |
 | `tests/visual/canvas-stability.ts` | Boot detection and pixel-stability polling |
 | `tests/visual/*-snapshots/` | Committed baseline PNGs (platform-keyed by Playwright) |

@@ -7,14 +7,17 @@ import { waitForEngineBoot, waitForStableFrame, failOnRuntimeErrors } from "./ca
  * Requires MAZE_URL (a deployed preview or production URL) — the build cannot be produced
  * locally on Linux/macOS, see docs/WEB_EXPORT.md.
  *
- * PREREQUISITE, NOT YET IMPLEMENTED: the web build must accept generation parameters from
- * the query string so each case renders a known maze. Without it these tests screenshot a
- * randomly-generated maze and fail on every run. See docs/VISUAL_REGRESSION.md ->
- * "Prerequisite: URL-parameter seeding". The tests are skipped until MAZE_SEEDING=1
- * declares that support exists, so this suite never reports a false red.
+ * URL seeding is provided by the in-app test bridge (scripts/testing/TestBridge.cs), which
+ * reads ?seed=&algorithm=&x=&y=&z= on load and generates that exact maze. The bridge
+ * activates automatically when a `seed` parameter is present, so these URLs need nothing
+ * extra. See docs/TEST_BRIDGE.md.
+ *
+ * Still gated on MAZE_TEST_BRIDGE=1 rather than assumed: the bridge is verified by unit and
+ * scene tests, but whether it survives the *patched* web export template is unproven until a
+ * deploy exists to check against. Skipping beats a false red.
  */
 
-const SEEDING_SUPPORTED = process.env.MAZE_SEEDING === "1";
+const BRIDGE_PRESENT = process.env.MAZE_TEST_BRIDGE === "1";
 
 /** Fixed cases. Each must render a byte-stable maze given the seeding contract. */
 const CASES = [
@@ -27,9 +30,10 @@ const CASES = [
 test.describe("maze web build — visual regression", () => {
   test.skip(!process.env.MAZE_URL, "MAZE_URL not set — nothing deployed to screenshot.");
   test.skip(
-    !SEEDING_SUPPORTED,
-    "URL-parameter seeding not implemented in the web build yet; screenshots would be " +
-      "nondeterministic. Set MAZE_SEEDING=1 once it lands.",
+    !BRIDGE_PRESENT,
+    "Test bridge not confirmed present in the deployed build; without URL seeding these " +
+      "screenshots would be nondeterministic. Set MAZE_TEST_BRIDGE=1 once a deploy includes " +
+      "scripts/testing/TestBridge.cs.",
   );
 
   for (const testCase of CASES) {
