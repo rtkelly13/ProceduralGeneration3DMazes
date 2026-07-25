@@ -45,7 +45,7 @@ runs:
         Write-Host "Version check OK: Godot.NET.Sdk $sdkMM matches template $env:TEMPLATE_VERSION"
 
     - name: Set up .NET 9 SDK
-      uses: actions/setup-dotnet@v6
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
       with:
         dotnet-version: "9.0.x"
 
@@ -55,7 +55,7 @@ runs:
 
     - name: Cache patched editor download
       id: editorcache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/godot-zip
         key: godot-editor-${{ inputs.godot_fork_tag }}
@@ -162,7 +162,7 @@ runs:
 
     - name: Upload web export artifact
       if: always()
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: maze-web-export-${{ github.run_id }}-${{ github.run_attempt }}
         path: |
