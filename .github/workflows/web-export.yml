@@ -25,16 +25,21 @@ on:
       - ".github/workflows/web-export.yml"
       - ".github/actions/export-web/**"
       - ".github/editor-checksums.txt"
+      - ".github/web-toolchain.env"
   workflow_dispatch:
+    # Both blank by default: the versions come from .github/web-toolchain.env so that
+    # dispatch, push-to-main and /preview always agree. Fill one in only to test an
+    # unpinned editor build ad hoc — note the checksum guard still requires an entry
+    # in .github/editor-checksums.txt for whatever tag you name.
     inputs:
       godot_fork_tag:
-        description: "Patched-editor release tag"
-        required: true
-        default: "4.7-stable"
+        description: "Override patched-editor release tag (blank = .github/web-toolchain.env)"
+        required: false
+        default: ""
       template_version:
-        description: "Export-template version folder name"
-        required: true
-        default: "4.7.stable.mono"
+        description: "Override export-template folder name (blank = .github/web-toolchain.env)"
+        required: false
+        default: ""
   issue_comment:
     types: [created]
 
@@ -63,8 +68,10 @@ jobs:
       - name: Export web (WASM)
         uses: ./.github/actions/export-web
         with:
-          godot_fork_tag: ${{ github.event.inputs.godot_fork_tag || '4.7-stable' }}
-          template_version: ${{ github.event.inputs.template_version || '4.7.stable.mono' }}
+          # Pass dispatch overrides straight through; blank resolves from
+          # .github/web-toolchain.env, identically to the preview job below.
+          godot_fork_tag: ${{ github.event.inputs.godot_fork_tag }}
+          template_version: ${{ github.event.inputs.template_version }}
           github_token: ${{ github.token }}
 
       - name: Deploy to Vercel
