@@ -15,11 +15,15 @@ namespace ProceduralMaze.Maze.Agents
     {
         private readonly IPointsAndDirectionsRetriever _pointsAndDirectionsRetriever;
         private readonly IDirectionsFlagParser _directionsFlagParser;
+        private readonly IRandomValueGenerator _randomValueGenerator;
 
-        public RandomAgent(IPointsAndDirectionsRetriever pointsAndDirectionsRetriever, IDirectionsFlagParser directionsFlagParser)
+        public RandomAgent(IPointsAndDirectionsRetriever pointsAndDirectionsRetriever,
+            IDirectionsFlagParser directionsFlagParser,
+            IRandomValueGenerator randomValueGenerator)
         {
             _pointsAndDirectionsRetriever = pointsAndDirectionsRetriever;
             _directionsFlagParser = directionsFlagParser;
+            _randomValueGenerator = randomValueGenerator;
         }
 
         public override AgentResults RunAgentBase(IMaze maze)
@@ -28,7 +32,7 @@ namespace ProceduralMaze.Maze.Agents
             if (!maze.CurrentPoint.Equals(maze.EndPoint))
             {
                 var firstDirections = maze.GetDirectionsFromPoint();
-                Random.Shared.Shuffle(firstDirections);
+                _randomValueGenerator.Shuffle(firstDirections);
                 var first = firstDirections[0];
                 var currentPoint = maze.CurrentPoint;
                 maze.MoveInDirection(first);
@@ -39,7 +43,7 @@ namespace ProceduralMaze.Maze.Agents
                     var directions = maze.GetDirectionsFromPoint();
                     var reverseDirection = _directionsFlagParser.OppositeDirection(lastDirectionMoved);
                     var filteredDirections = directions.Where(x => x != reverseDirection).ToArray();
-                    Random.Shared.Shuffle(filteredDirections);
+                    _randomValueGenerator.Shuffle(filteredDirections);
                     if (_pointsAndDirectionsRetriever.IsJunction(directions))
                     {
                         var direction = filteredDirections[0];

@@ -29,3 +29,37 @@ jobs:
 
       - name: Test
         run: dotnet test tests/ProceduralMaze.Tests.csproj -c Debug --nologo
+
+  # Keeps the visual-regression harness verified on every PR without needing a deployed
+  # build. The maze suite itself can only run post-deploy (see web-export.yml), so without
+  # this the harness would sit untested until someone needed it.
+  visual-harness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright (chromium)
+        working-directory: tests/visual
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Visual harness self-test
+        working-directory: tests/visual
+        run: npx playwright test --project=harness-selftest
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-harness-report
+          path: |
+            tests/visual/playwright-report/
+            tests/visual/test-results/
+          if-no-files-found: ignore

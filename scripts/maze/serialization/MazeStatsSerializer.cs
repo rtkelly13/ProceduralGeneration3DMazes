@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ProceduralMaze.Maze.Factory;
+using ProceduralMaze.Maze.Helper;
 
 namespace ProceduralMaze.Maze.Serialization
 {
@@ -12,6 +13,17 @@ namespace ProceduralMaze.Maze.Serialization
     public class MazeStatsSerializer : IMazeStatsSerializer
     {
         public const string StatsFileExtension = ".stats.json";
+
+        private readonly ISystemClock _clock;
+
+        /// <param name="clock">
+        /// Time source for the <c>generatedAt</c> field. Defaults to the real clock; pass a
+        /// fixed clock to make serialized stats byte-stable for golden comparisons.
+        /// </param>
+        public MazeStatsSerializer(ISystemClock? clock = null)
+        {
+            _clock = clock ?? new SystemClock();
+        }
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -51,7 +63,7 @@ namespace ProceduralMaze.Maze.Serialization
 
             var data = new MazeStatsData
             {
-                GeneratedAt = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                GeneratedAt = _clock.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
                 Dimensions = new DimensionsData
                 {
                     Width = model.Size.X,

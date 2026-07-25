@@ -1,0 +1,15 @@
+{
+  "name": "maze-visual-regression",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Playwright visual regression suite for the C#/WASM web build",
+  "scripts": {
+    "test": "playwright test",
+    "test:update": "playwright test --update-snapshots",
+    "report": "playwright show-report",
+    "selftest": "playwright test --project=harness-selftest"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}

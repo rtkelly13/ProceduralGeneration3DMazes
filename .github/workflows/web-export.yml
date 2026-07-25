@@ -117,6 +117,50 @@ jobs:
           SMOKE_URL: ${{ needs.production.outputs.url }}
         run: node .github/smoke/smoke.mjs
 
+
+  # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
+  # Screenshotting a build that didn't start just yields a blank baseline.
+  #
+  # MAZE_SEEDING gates the maze suite: until the web build reads generation parameters from
+  # the query string, screenshots are nondeterministic, so the suite skips rather than
+  # reporting a false red. See docs/VISUAL_REGRESSION.md -> "Prerequisite: URL-parameter
+  # seeding", then set this to "1".
+  visual-production:
+    needs: [production, smoke-production]
+    if: needs.production.outputs.url != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright (chromium)
+        working-directory: tests/visual
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Visual regression
+        working-directory: tests/visual
+        env:
+          MAZE_URL: ${{ needs.production.outputs.url }}
+          MAZE_SEEDING: "0"
+        run: npx playwright test --project=maze
+
+      - name: Upload visual diff on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-production-report
+          path: |
+            tests/visual/playwright-report/
+            tests/visual/test-results/
+          if-no-files-found: ignore
+
   # ── Preview: on-demand via "/preview" comment on a PR (owner only) ──────────
   preview:
     if: >
@@ -213,3 +257,46 @@ jobs:
           else
             gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ Smoke test FAILED on the preview — the build served but did not boot correctly. Check the workflow logs."
           fi
+
+  # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
+  # Screenshotting a build that didn't start just yields a blank baseline.
+  #
+  # MAZE_SEEDING gates the maze suite: until the web build reads generation parameters from
+  # the query string, screenshots are nondeterministic, so the suite skips rather than
+  # reporting a false red. See docs/VISUAL_REGRESSION.md -> "Prerequisite: URL-parameter
+  # seeding", then set this to "1".
+  visual-preview:
+    needs: [preview, smoke-preview]
+    if: needs.preview.outputs.url != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright (chromium)
+        working-directory: tests/visual
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Visual regression
+        working-directory: tests/visual
+        env:
+          MAZE_URL: ${{ needs.preview.outputs.url }}
+          MAZE_SEEDING: "0"
+        run: npx playwright test --project=maze
+
+      - name: Upload visual diff on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-preview-report
+          path: |
+            tests/visual/playwright-report/
+            tests/visual/test-results/
+          if-no-files-found: ignore

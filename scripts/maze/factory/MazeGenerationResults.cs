@@ -22,5 +22,12 @@ namespace ProceduralMaze.Maze.Factory
         public List<DirectionAndPoint> DirectionsCarvedIn { get; set; } = new();
         public GenerationMetrics Metrics { get; set; } = new();
         public Dictionary<MazePoint, int> Heatmap { get; set; } = new();
+
+        /// <summary>
+        /// The seed that actually produced this maze — whether it came from
+        /// <c>MazeGenerationSettings.Seed</c> or was drawn automatically. Feed it back in
+        /// to reproduce this exact maze.
+        /// </summary>
+        public int Seed { get; set; }
     }
 }

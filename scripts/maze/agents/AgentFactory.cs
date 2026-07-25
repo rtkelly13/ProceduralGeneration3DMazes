@@ -8,11 +8,15 @@ namespace ProceduralMaze.Maze.Agents
     {
         private readonly IDirectionsFlagParser _directionsFlagParser;
         private readonly IPointsAndDirectionsRetriever _pointsAndDirectionsRetriever;
+        private readonly IRandomValueGenerator _randomValueGenerator;
 
-        public AgentFactory(IDirectionsFlagParser directionsFlagParser, IPointsAndDirectionsRetriever pointsAndDirectionsRetriever)
+        public AgentFactory(IDirectionsFlagParser directionsFlagParser,
+            IPointsAndDirectionsRetriever pointsAndDirectionsRetriever,
+            IRandomValueGenerator randomValueGenerator)
         {
             _directionsFlagParser = directionsFlagParser;
             _pointsAndDirectionsRetriever = pointsAndDirectionsRetriever;
+            _randomValueGenerator = randomValueGenerator;
         }
 
         public IAgent MakeAgent(AgentType type)
@@ -20,9 +24,9 @@ namespace ProceduralMaze.Maze.Agents
             switch (type)
             {
                 case AgentType.Random:
-                    return new RandomAgent(_pointsAndDirectionsRetriever, _directionsFlagParser);
+                    return new RandomAgent(_pointsAndDirectionsRetriever, _directionsFlagParser, _randomValueGenerator);
                 case AgentType.Perfect:
-                    return new PerfectAgent(_directionsFlagParser);
+                    return new PerfectAgent(_directionsFlagParser, _randomValueGenerator);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }

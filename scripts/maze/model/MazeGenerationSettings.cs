@@ -16,5 +16,15 @@ namespace ProceduralMaze.Maze.Model
         public SolverType SolverType { get; set; }
         public HeuristicType HeuristicType { get; set; }
         public GrowingTreeSettings GrowingTreeSettings { get; set; } = new GrowingTreeSettings();
+
+        /// <summary>
+        /// Seed for this generation run. The same seed with otherwise identical settings
+        /// always produces the same maze.
+        /// </summary>
+        /// <remarks>
+        /// Null means "pick one for me" — a seed is still drawn and reported back via
+        /// <c>MazeGenerationResults.Seed</c>, so any run can be reproduced after the fact.
+        /// </remarks>
+        public int? Seed { get; set; }
     }
 }

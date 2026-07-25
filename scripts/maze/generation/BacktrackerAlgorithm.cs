@@ -10,12 +10,15 @@ namespace ProceduralMaze.Maze.Generation
     {
         private readonly IDirectionsFlagParser _directionsFlagParser;
         private readonly IRandomPointGenerator _randomPointGenerator;
+        private readonly IRandomValueGenerator _randomValueGenerator;
 
         public BacktrackerAlgorithm(IDirectionsFlagParser directionsFlagParser, 
-            IRandomPointGenerator randomPointGenerator)
+            IRandomPointGenerator randomPointGenerator,
+            IRandomValueGenerator randomValueGenerator)
         {
             _directionsFlagParser = directionsFlagParser;
             _randomPointGenerator = randomPointGenerator;
+            _randomValueGenerator = randomValueGenerator;
         }
 
         public AlgorithmRunResults GenerateMaze(IMazeCarver maze, MazeGenerationSettings settings)
@@ -33,7 +36,7 @@ namespace ProceduralMaze.Maze.Generation
                 
                 maze.JumpToPoint(currentPoint);
                 var carvableDirections = maze.CarvableDirections();
-                ArrayHelper.Shuffle(carvableDirections);
+                _randomValueGenerator.Shuffle(carvableDirections);
                 var carved = false;
                 foreach (var direction in carvableDirections)
                 {
