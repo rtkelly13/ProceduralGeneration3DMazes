@@ -11,7 +11,9 @@ namespace ProceduralMaze.Tests;
 /// Migrated from the original ProcGenMaze.Test project.
 /// </summary>
 [TestFixture]
-[NonParallelizable] // Tests in this fixture share mock state and cannot run in parallel
+// Was [NonParallelizable] because the tests shared per-fixture mock state. That is no longer
+// true: the assembly runs InstancePerTestCase (see TestSetup.cs), so each test gets its own
+// fields and can run in parallel safely.
 public class MovementHelperTests
 {
     private IMovementHelper _movementHelper = null!;
