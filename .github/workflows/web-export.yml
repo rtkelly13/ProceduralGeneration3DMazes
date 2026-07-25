@@ -58,7 +58,7 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Export web (WASM)
         uses: ./.github/actions/export-web
@@ -96,9 +96,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
       - name: Install Playwright (chromium)
@@ -141,7 +141,7 @@ jobs:
           "sha=$sha" >> $env:GITHUB_OUTPUT
 
       - name: Checkout PR head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.pr.outputs.sha }}
 
@@ -184,9 +184,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
       - name: Install Playwright (chromium)
