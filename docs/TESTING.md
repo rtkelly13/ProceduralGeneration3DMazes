@@ -16,7 +16,7 @@ layer needs a Windows-built web export and a Vercel deploy. Only test in the bro
 
 ## Unit tests — `dotnet test tests/`
 
-560 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
+561 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
 fast and portable. Any code needing `using Godot;` cannot live here — that is the boundary, and
 it is why the scene layer exists.
 
