@@ -27,9 +27,12 @@ Consequences:
 
 - **No output assertions.** An algorithm change that made mazes measurably worse — more
   dead ends, shorter solution paths, biased carving — would pass every test.
-- **Runtime was unpredictable.** Because some seeds produce pathological cases for
-  `PerfectAgent`'s recursive DFS, suite wall-time on the same commit ranged from **~0.9s to
-  ~59s**. That reads as flaky infrastructure; it was actually unseeded input.
+- **Runtime was unpredictable.** Unlucky shuffle orders send `PerfectAgent`'s exponential
+  DFS down enormous subtrees, so suite wall-time on identical code ranged from **~1s to a
+  40-minute hang** (CI run 9), with **1002s on `main`** well before any of this work. That
+  reads as flaky infrastructure; it was unseeded input meeting an exponential algorithm.
+  Note this bit the *sample-maze* tests, which load mazes from disk — so the nondeterminism
+  there is the agent's own shuffle order, not generation. See "Open questions".
 - **Bugs weren't reportable.** A failure found by chance could not be reproduced, because
   nothing recorded the random state that produced it.
 
@@ -152,3 +155,14 @@ should wait.
 - **`BinaryTreeAlgorithm` is a placeholder** that delegates to `BacktrackerAlgorithm`
   (see its own comment). Golden files would lock in that duplicate behaviour — worth
   resolving before, not after, goldens are committed.
+- **`PerfectAgent`'s search is worst-case exponential** and should use a shared visited set
+  instead of scanning the current path (`previousPoints.Any(...)`) — it also copies the whole
+  path per branch. Measured on the 1200/1600-cell samples, 8 runs of two tests: 1.8s to
+  >120s (two runs unfinished), while RandomAgent stayed flat at 1.6-1.8s. This is what made
+  CI wall-time range from 29s to a 40-minute hang on identical code, including a 1002s run on
+  `main` before any of this work.
+
+  Mitigated for now by narrowing the PerfectAgent sample to <= 200 cells and capping those
+  tests at 60s (`SampleMazeTests`), plus `timeout-minutes: 15` on the CI job. **That bounds
+  the symptom; the algorithm is still exponential** and will resurface on any larger maze —
+  including in the app, where it would hang the UI rather than a test.

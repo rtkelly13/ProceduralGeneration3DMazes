@@ -18,6 +18,10 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A pathological run once hung this job for 40 minutes before being cancelled with no
+    # diagnostic. The suite completes in ~10s; 15 minutes fails fast while leaving ample
+    # headroom for a cold restore on a slow runner.
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +39,7 @@ jobs:
   # this the harness would sit untested until someone needed it.
   visual-harness:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
