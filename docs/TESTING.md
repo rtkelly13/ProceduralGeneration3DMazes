@@ -71,6 +71,30 @@ building; none did both, which is how it survived. Fixed, with regression covera
 That is the argument for this refactor in one incident: the bug was always reachable from the
 UI, and became visible the moment the flow was testable without the engine.
 
+### Finding bugs by combination sweeping
+
+Both bugs found so far came from **combining operations no single test combined**. That is now
+cheap to search deliberately: `MazeSession` makes a full generate → wrap → graph → serialise →
+import → stats cycle a few lines of plain C#, so the option space can be swept in seconds.
+
+Doing that found a second defect: **generating a 1×1×1 maze hung forever.**
+`MazeModelFactory.BuildMaze` picked the end point with
+`while (start.Equals(end)) end = RandomPoint(...)`, and a single-cell maze has exactly one
+point, so no distinct end point could ever be drawn. A hang, not a crash — no stack trace, no
+error, just a frozen app. Reachable by importing a `SIZE 1 1 1` file, which the format permits.
+Every neighbouring size (1×2×1, 2×1×1, 1×1×2, 2×2×1) worked, which is why nothing caught it.
+Fixed with a cell-count guard plus bounded retries and a deterministic fallback; covered by
+[`tests/DegenerateMazeSizeTests.cs`](../tests/DegenerateMazeSizeTests.cs).
+
+After the fix the sweep runs clean: **418 combinations, 0 failures** — 4 algorithms × 3 maze
+types × 7 sizes (including degenerate axes) × wall-removal × door placement, plus every agent
+and solver/heuristic pairing. Worth re-running after any change to generation, import or
+solving; it is a throwaway exploratory test, not something to commit.
+
+Technique note: an exploratory sweep must log progress **to a file before each case**, not via
+`TestContext.Out`. A hang never flushes the test output, so the console shows nothing and the
+culprit is invisible — writing the label to disk first makes the last line name it.
+
 See [REGRESSION_TESTING.md](./REGRESSION_TESTING.md) for the determinism guarantees the suite
 relies on and the golden-file plan.
 
