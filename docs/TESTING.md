@@ -16,7 +16,7 @@ layer needs a Windows-built web export and a Vercel deploy. Only test in the bro
 
 ## Unit tests — `dotnet test tests/`
 
-550 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
+560 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
 fast and portable. Any code needing `using Godot;` cannot live here — that is the boundary, and
 it is why the scene layer exists.
 
@@ -195,6 +195,7 @@ tests fine.
   (1473 lines) is largely untested. Next: abstract `FileAccess`/`OS` in `MazeImportExport` so
   import/export round-trips become testable, then pull orchestration out of `MazeMain`
   incrementally as it is touched — not as a big-bang rewrite.
-- **`PerfectAgent` is worst-case exponential** — see
-  [REGRESSION_TESTING.md](./REGRESSION_TESTING.md). Bounded in tests, unfixed in the app.
+- ~~**`PerfectAgent` is worst-case exponential**~~ — fixed (shared visited set + explicit
+  stack); 8-run spread went from 1.8s–>120s to 1.8–2.8s. See
+  [REGRESSION_TESTING.md](./REGRESSION_TESTING.md).
 - **No golden files yet.** Designed in REGRESSION_TESTING.md, not built.

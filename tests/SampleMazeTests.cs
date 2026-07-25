@@ -29,30 +29,6 @@ public class SampleMazeTests
     private const int MaxTestMazeCells = 5000;
     
     /// <summary>
-    /// Maximum cells for a maze used in <c>PerfectAgent</c> tests.
-    ///
-    /// Much smaller than <see cref="MaxTestMazeCells"/> because PerfectAgent's search is
-    /// worst-case exponential: it tracks visited cells per-path
-    /// (<c>previousPoints.Any(...)</c>, a linear scan) rather than with a shared visited
-    /// set, so the same cell is re-explored along different paths, and it copies the whole
-    /// path per branch. Whether it finishes quickly depends on the shuffled direction
-    /// order.
-    ///
-    /// Measured on the 1200- and 1600-cell samples (20x20x3, 20x20x4), 8 runs of these two
-    /// tests: 1.8s, 1.9s, 2.0s, 3.2s, 14.6s, 25.9s and two runs still unfinished at 120s.
-    /// The same runs with RandomAgent were flat at 1.6-1.8s. That heavy tail is what made
-    /// CI wall-time range from 29s to over 40 minutes on identical code.
-    ///
-    /// 200 cells keeps the 10x10x1 sample and drops the two large ones, which is enough to
-    /// cover the agent's behaviour. Larger mazes belong in benchmarks, where a long run is
-    /// measured rather than blocking a merge.
-    ///
-    /// This bounds the symptom, not the cause — PerfectAgent should use a shared visited
-    /// set. See docs/REGRESSION_TESTING.md -> "Open questions".
-    /// </summary>
-    private const int MaxPerfectAgentMazeCells = 200;
-
-    /// <summary>
     /// All available maze files for testing (excluding very large mazes).
     /// </summary>
     private static IEnumerable<string> AllMazeFiles()
@@ -60,17 +36,6 @@ public class SampleMazeTests
         return Directory.GetFiles(SampleDataDirectory, "*.maze")
             .Select(f => Path.GetFileName(f)!)
             .Where(f => GetCellCount(f) <= MaxTestMazeCells);
-    }
-
-    /// <summary>
-    /// Maze files small enough for PerfectAgent's exponential search.
-    /// See <see cref="MaxPerfectAgentMazeCells"/>.
-    /// </summary>
-    private static IEnumerable<string> PerfectAgentMazeFiles()
-    {
-        return Directory.GetFiles(SampleDataDirectory, "*.maze")
-            .Select(f => Path.GetFileName(f)!)
-            .Where(f => GetCellCount(f) <= MaxPerfectAgentMazeCells);
     }
 
     /// <summary>
@@ -418,7 +383,7 @@ public class SampleMazeTests
 
     #region Agent Tests
 
-    [Test, TestCaseSource(nameof(PerfectAgentMazeFiles)), Timeout(60_000)]
+    [Test, TestCaseSource(nameof(AllMazeFiles)), Timeout(60_000)]
     public void PerfectAgent_SolvesMaze(string filename)
     {
         var services = CreateServices();
@@ -432,7 +397,7 @@ public class SampleMazeTests
         Assert.That(result.Movements, Is.Not.Empty, "Agent should make movements");
     }
 
-    [Test, TestCaseSource(nameof(PerfectAgentMazeFiles)), Timeout(60_000)]
+    [Test, TestCaseSource(nameof(AllMazeFiles)), Timeout(60_000)]
     public void PerfectAgent_PathReachesEnd(string filename)
     {
         var services = CreateServices();

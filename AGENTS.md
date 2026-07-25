@@ -126,7 +126,7 @@ Four layers, each with a different cost. **Push tests down** — see
 
 | Layer | Command | Needs |
 |---|---|---|
-| Unit + integration (550 tests, ~10s) | `cd tests && dotnet test` | .NET only |
+| Unit + integration (560 tests, ~1s) | `cd tests && dotnet test` | .NET only |
 | Scene / UI (in-engine) | `dotnet build -p:IncludeSceneTests=true` then `godot --headless --path . res://tests/scene/scene_tests.tscn` | Godot binary |
 | Functional (browser) | `cd tests/visual && npx playwright test --project=functional` | deployed build |
 | Visual | `cd tests/visual && npx playwright test --project=maze` | deployed build |

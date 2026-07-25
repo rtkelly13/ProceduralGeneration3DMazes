@@ -158,14 +158,15 @@ should wait.
 - **`BinaryTreeAlgorithm` is a placeholder** that delegates to `BacktrackerAlgorithm`
   (see its own comment). Golden files would lock in that duplicate behaviour — worth
   resolving before, not after, goldens are committed.
-- **`PerfectAgent`'s search is worst-case exponential** and should use a shared visited set
-  instead of scanning the current path (`previousPoints.Any(...)`) — it also copies the whole
-  path per branch. Measured on the 1200/1600-cell samples, 8 runs of two tests: 1.8s to
-  >120s (two runs unfinished), while RandomAgent stayed flat at 1.6-1.8s. This is what made
-  CI wall-time range from 29s to a 40-minute hang on identical code, including a 1002s run on
-  `main` before any of this work.
+- ~~**`PerfectAgent`'s search is worst-case exponential**~~ — **fixed.** It now uses a shared
+  visited set and an explicit stack instead of scanning the current path
+  (`previousPoints.Any(...)`) and copying the whole path per branch.
 
-  Mitigated for now by narrowing the PerfectAgent sample to <= 200 cells and capping those
-  tests at 60s (`SampleMazeTests`), plus `timeout-minutes: 15` on the CI job. **That bounds
-  the symptom; the algorithm is still exponential** and will resurface on any larger maze —
-  including in the app, where it would hang the UI rather than a test.
+  Before: 8 runs of the two sample-maze tests gave 1.8s, 1.9s, 2.0s, 3.2s, 14.6s, 25.9s and
+  **two runs unfinished at 120s**. After: 1.8–2.8s, zero timeouts. Full suite dropped from 8s
+  to 1s. The iterative form also removes a stack-overflow ceiling that scaled with path
+  length — the app allows 50 cells per axis, i.e. tens of thousands of cells.
+
+  The temporary workaround (narrowing the PerfectAgent sample to 200 cells) has been removed,
+  restoring the 4 dropped test cases. The 60s per-test cap and `timeout-minutes: 15` on the
+  CI job stay as tripwires: cheap, and a regression previously cost a 40-minute job.
