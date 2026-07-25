@@ -4,7 +4,7 @@ Which layer to test where, and why. Start here before adding a test.
 
 | Layer | Where | Runs | Covers | Needs |
 |---|---|---|---|---|
-| **Unit** | `tests/*.cs` (NUnit) | every PR, ~10s | maze logic, serialization, solvers, agents, bridge wire format | .NET only — **no Godot SDK** |
+| **Unit + integration** | `tests/*.cs` (NUnit) | every PR, ~10s | maze logic, serialization, solvers, agents, bridge wire format, **session flows, animation playback** | .NET only — **no Godot SDK** |
 | **Scene / UI** | `tests/scene/` (in-engine) | every PR, ~1min | scenes instantiate, node types, autoloads, runtime wiring | Godot binary, headless |
 | **Functional (browser)** | `tests/visual/functional.spec.ts` | post-deploy | app state through the real WASM runtime | deployed build + test bridge |
 | **Visual** | `tests/visual/maze.spec.ts` | post-deploy | rendered output at fixed seeds | deployed build + test bridge |
@@ -16,10 +16,60 @@ layer needs a Windows-built web export and a Vercel deploy. Only test in the bro
 
 ## Unit tests — `dotnet test tests/`
 
-493 tests. The project deliberately compiles `scripts/maze/**` plus `ServiceContainer` and
-`TestBridgeProtocol` **without the Godot SDK**, which is what keeps it fast and portable. Any
-code that needs `using Godot;` cannot be tested here — that is the boundary, and it is why the
-scene layer exists.
+550 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
+fast and portable. Any code needing `using Godot;` cannot live here — that is the boundary, and
+it is why the scene layer exists.
+
+## Segregating behaviour from Godot
+
+The single highest-leverage thing for testability, and mostly already true of this codebase.
+Measured Godot-coupling density in `scripts/ui/`:
+
+| File | Lines | Godot refs | |
+|---|---|---|---|
+| `AnimationController.cs` | 254 | **0** | no `using Godot;` |
+| `MazeImportExport.cs` | 363 | 9 | only `FileAccess`, `OS` |
+| `ImportExportResult.cs` | 54 | **0** | |
+| `PathVisualizationSettings.cs` | 206 | 27 | all one type: `Color` |
+| `MazeMain.cs` | 1473 | 156 (11%) | `Input.` ×28, `GetNode` ×24, `AddChild` ×13 |
+| `GraphViewRenderer.cs` | 631 | 73 (12%) | genuine drawing |
+
+Three tiers, and the plan follows from them:
+
+1. **Already Godot-free** — just include it in the test project. `AnimationController` and
+   `ImportExportResult` compile there with no changes at all.
+2. **Trivially freeable** — `GameState` (done, below), `MazeImportExport` (abstract `FileAccess`
+   and `OS`), `PathVisualizationSettings` (swap `Color` for a plain RGBA struct).
+3. **Genuinely Godot** — `GraphViewRenderer`'s drawing, `MazeMain`'s input and node wiring,
+   scene lifecycle. **Don't extract these.** Render code's contract *is* the pixels, which is
+   what visual tests are for; chasing coverage here produces anaemic wrappers and nothing else.
+
+### `MazeSession`: the humble-object split
+
+`GameState` was 266 lines whose **entire** Godot surface was `: Node`, `_Ready`, `_ExitTree`,
+one `GD.Print` and one `Mathf.Clamp` — nearly all logic, none of it testable.
+
+It is now a thin adapter over [`MazeSession`](../scripts/session/MazeSession.cs), which holds
+the state and operations and has no Godot dependency. The public API is unchanged, so nothing
+in `scripts/ui` needed editing. `PathVisualizationSettings` deliberately stayed on the node:
+it is presentation config built on `Color`, and its `DecisionDetailLevel` enum lives in the
+same file, so moving it would drag Godot straight back in.
+
+The payoff is *flow* tests that were previously impossible — generate → navigate levels →
+cycle paths → import → regenerate, in-process, in milliseconds. See
+[`tests/MazeSessionTests.cs`](../tests/MazeSessionTests.cs).
+
+**It found a real bug on its first run.** `GameState.LoadImportedMaze` applies dead-end
+wrapping and then builds a graph, and that combination crashed with
+`Nullable object must have a value` — so **importing any maze crashed the app**. A dead-end
+cell has exactly one direction (the one you arrived from), so `GraphBuilder`'s corridor walk
+treated it as neither junction nor terminus and dereferenced null. Dead-end wrapping *creates*
+such cells by hiding passages. Several existing tests did wrapping, and several did graph
+building; none did both, which is how it survived. Fixed, with regression coverage in
+[`tests/GraphBuilderDeadEndTests.cs`](../tests/GraphBuilderDeadEndTests.cs).
+
+That is the argument for this refactor in one incident: the bug was always reachable from the
+UI, and became visible the moment the flow was testable without the engine.
 
 See [REGRESSION_TESTING.md](./REGRESSION_TESTING.md) for the determinism guarantees the suite
 relies on and the golden-file plan.
@@ -116,9 +166,11 @@ tests fine.
 ## Known gaps
 
 - **The patched-template question** above: the single biggest unknown.
-- **`scripts/ui/` is still thinly covered.** Scene tests establish the harness and cover
-  wiring; the interaction logic inside `MazeMain` (1473 lines) is largely untested. That is
-  the next place to spend effort, and it is now cheap to do.
+- **`scripts/ui/` is still thinly covered.** `AnimationController` is now fully covered and
+  `GameState`'s logic moved to `MazeSession`, but the interaction logic inside `MazeMain`
+  (1473 lines) is largely untested. Next: abstract `FileAccess`/`OS` in `MazeImportExport` so
+  import/export round-trips become testable, then pull orchestration out of `MazeMain`
+  incrementally as it is touched — not as a big-bang rewrite.
 - **`PerfectAgent` is worst-case exponential** — see
   [REGRESSION_TESTING.md](./REGRESSION_TESTING.md). Bounded in tests, unfixed in the app.
 - **No golden files yet.** Designed in REGRESSION_TESTING.md, not built.

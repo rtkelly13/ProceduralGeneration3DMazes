@@ -90,8 +90,9 @@ namespace ProceduralMaze.Maze.Solver
                 jumper.JumpInDirection(direction);
                 Direction inputDirection = direction;
                 bool endFound = false;
+                bool corridorDeadEnds = false;
                 MazePoint endPoint = default!;
-                
+
                 do
                 {
                     var directions = jumper.GetDirectionsFromPoint();
@@ -112,12 +113,40 @@ namespace ProceduralMaze.Maze.Solver
                                 break;
                             }
                         }
-                        inputDirection = nextDir!.Value;
+
+                        if (nextDir is null)
+                        {
+                            // Dead end: the only way out is back the way we came. A dead-end cell
+                            // has exactly one direction, so it is neither a junction (which needs
+                            // more than two) nor necessarily the start/end, and the walk above
+                            // cannot terminate on it.
+                            //
+                            // This edge is dropped rather than pointed at the dead-end cell,
+                            // because the graph's node set is junctions plus start/end, and
+                            // consumers look edges up with `graph.Nodes[edge.Point]` — an edge to
+                            // a non-node would throw KeyNotFoundException instead. A corridor
+                            // that dead-ends leads to no node, so it contributes no edge.
+                            //
+                            // Reachable in practice once dead-end wrapping is active: hiding a
+                            // dead-end passage turns the cell before it into a new dead end.
+                            // GameState.LoadImportedMaze wraps and then builds the graph, so
+                            // before this guard, importing a maze threw
+                            // "Nullable object must have a value".
+                            corridorDeadEnds = true;
+                            break;
+                        }
+
+                        inputDirection = nextDir.Value;
                         directionsToPoint.Add(inputDirection);
                         jumper.JumpInDirection(inputDirection);
                     }
                 } while (!endFound);
-                
+
+                if (corridorDeadEnds)
+                {
+                    continue;
+                }
+
                 edges.Add(new GraphEdge
                 {
                     Point = endPoint,

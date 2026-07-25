@@ -49,7 +49,8 @@ var result = services.MazeGenerationFactory.GenerateMaze(settings);
 
 | Class | Purpose |
 |-------|---------|
-| `GameState` | Godot autoload singleton, holds settings and current maze |
+| `MazeSession` | **Godot-free** session state and operations — where behaviour belongs |
+| `GameState` | Thin Godot autoload adapter forwarding to `MazeSession` |
 | `ServiceContainer` | Manual DI container, instantiates all services |
 | `MazeGenerationFactory` | Main entry point for maze generation |
 | `MazeJumper` | Navigate through a generated maze |
@@ -107,7 +108,9 @@ In Godot 2D rendering:
 - Benchmarks: `benchmarks/ProceduralMaze.Benchmarks.csproj`
 - Godot scenes: `scenes/*.tscn`
 - Maze logic: `scripts/maze/`
+- Session state/behaviour (Godot-free): `scripts/session/`
 - UI code: `scripts/ui/`
+- Web test bridge: `scripts/testing/`
 
 ## Adding New Features
 
@@ -123,13 +126,17 @@ Four layers, each with a different cost. **Push tests down** — see
 
 | Layer | Command | Needs |
 |---|---|---|
-| Unit (493 tests, ~10s) | `cd tests && dotnet test` | .NET only |
+| Unit + integration (550 tests, ~10s) | `cd tests && dotnet test` | .NET only |
 | Scene / UI (in-engine) | `dotnet build -p:IncludeSceneTests=true` then `godot --headless --path . res://tests/scene/scene_tests.tscn` | Godot binary |
 | Functional (browser) | `cd tests/visual && npx playwright test --project=functional` | deployed build |
 | Visual | `cd tests/visual && npx playwright test --project=maze` | deployed build |
 
-`scripts/ui/` cannot be reached by the unit suite (it builds without the Godot SDK) — UI
-changes belong in scene tests. Browser tests need the in-app test bridge
+**Keep behaviour out of Godot types.** New logic belongs in a plain C# class that the unit
+suite compiles (`scripts/session/`, `scripts/maze/`); Godot `Node` subclasses should be thin
+adapters that forward to it — `GameState` → `MazeSession` is the pattern. Adding a file to the
+test project's `<Compile Include>` list is a claim that it is Godot-free, and the build
+enforces that claim. Only genuinely engine-bound code (drawing, input, node wiring, scene
+lifecycle) should need scene tests. Browser tests need the in-app test bridge
 ([docs/TEST_BRIDGE.md](./docs/TEST_BRIDGE.md)) because a Godot web export is a single
 `<canvas>` with no DOM for Playwright to query.
 

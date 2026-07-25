@@ -43,6 +43,16 @@
       TestBridge.cs itself is a Godot Node and cannot be compiled without the Godot SDK.
     -->
     <Compile Include="..\scripts\testing\TestBridgeProtocol.cs" Link="Testing\TestBridgeProtocol.cs" />
+
+    <!--
+      Application behaviour that carries no Godot dependency, so it belongs in this fast suite
+      rather than behind the engine. See docs/TESTING.md -> "Segregating behaviour from Godot".
+      Adding a file here is a claim that it is Godot-free; the build enforces that claim.
+    -->
+    <Compile Include="..\scripts\session\MazeSession.cs" Link="Session\MazeSession.cs" />
+    <Compile Include="..\scripts\ui\AnimationController.cs" Link="UI\AnimationController.cs" />
+    <Compile Include="..\scripts\ui\ImportExportResult.cs" Link="UI\ImportExportResult.cs" />
+    <Compile Include="..\scripts\ui\GraphLayoutType.cs" Link="UI\GraphLayoutType.cs" />
   </ItemGroup>
 
   <ItemGroup>
