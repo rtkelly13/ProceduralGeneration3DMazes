@@ -145,6 +145,19 @@ thing that cannot be checked without a real web build is exactly that.
 
 ## Enabling in CI
 
+**The smoke test now answers this for you.** Every deploy loads `?test=1` and reports whether
+the bridge came up, in the job log and the GitHub step summary:
+
+```
+✅ TEST BRIDGE PRESENT — set MAZE_TEST_BRIDGE=1 to enable the browser suites
+⚠️  TEST BRIDGE ABSENT — window.__mazeTestApi never became "1".
+```
+
+Reported, not asserted: the bridge is an automation aid, and a build without it is still a
+working build, so failing a deploy over it would block releases for no user-visible reason. But
+it is the one thing unit and scene tests cannot answer, so it is checked automatically instead
+of waiting on someone to look.
+
 Both Playwright projects skip unless `MAZE_TEST_BRIDGE=1`:
 
 ```yaml

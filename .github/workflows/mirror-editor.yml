@@ -1,0 +1,117 @@
+name: Mirror Patched Editor
+
+# Mirrors the patched Godot web-export editor to a release on THIS repository, so the web
+# pipeline no longer depends on a third-party release staying published.
+#
+# WHY: the export needs a Windows editor build from ComplexRobot/godot-dotnet-web-export (see
+# docs/WEB_EXPORT.md). That fork is actively maintained -- it matched upstream 4.7.1 within two
+# days -- but "maintained today" is not "available forever". A deleted or re-published release
+# breaks the export outright, and the checksum pin turns a silent substitution into a hard
+# failure but cannot conjure the bytes back.
+#
+# Run this once per pinned editor version, then point GODOT_FORK_REPO in
+# .github/web-toolchain.env at this repository. The export action already treats the repo as
+# config, so that is a one-line change.
+#
+# Deliberately manual: it uploads ~165 MB to a release, which is not something to do on a
+# schedule or a push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Editor release tag to mirror (blank = value from .github/web-toolchain.env)"
+        required: false
+        default: ""
+      source_repo:
+        description: "Upstream repo to mirror from (blank = GODOT_FORK_REPO from the toolchain file)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write # needed to create the mirror release
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve what to mirror
+        id: resolve
+        env:
+          IN_TAG: ${{ github.event.inputs.tag }}
+          IN_REPO: ${{ github.event.inputs.source_repo }}
+        run: |
+          set -euo pipefail
+          # Same single source of truth the export action uses, so a mirror cannot drift from
+          # the version actually being built with.
+          cfg=.github/web-toolchain.env
+          tag="${IN_TAG:-$(grep -E '^GODOT_FORK_TAG=' $cfg | cut -d= -f2)}"
+          repo="${IN_REPO:-$(grep -E '^GODOT_FORK_REPO=' $cfg | cut -d= -f2)}"
+          asset="Godot_v${tag}_mono_web_export_win64.zip"
+          echo "tag=$tag"     >> "$GITHUB_OUTPUT"
+          echo "repo=$repo"   >> "$GITHUB_OUTPUT"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "Mirroring $asset from $repo@$tag"
+
+      - name: Download from upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ steps.resolve.outputs.repo }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          ASSET: ${{ steps.resolve.outputs.asset }}
+        run: |
+          set -euo pipefail
+          gh release download "$TAG" --repo "$REPO" --pattern "$ASSET" --dir .
+
+      - name: Verify against the pinned checksum
+        env:
+          ASSET: ${{ steps.resolve.outputs.asset }}
+        run: |
+          set -euo pipefail
+          # Mirroring unverified bytes would launder a compromised upstream into a trusted
+          # location, which is worse than having no mirror at all.
+          expected=$(grep -v '^\s*#' .github/editor-checksums.txt | grep "$ASSET" | awk '{print $1}')
+          if [ -z "$expected" ]; then
+            echo "::error::No pinned checksum for $ASSET in .github/editor-checksums.txt."
+            echo "::error::Add it first (see docs/WEB_EXPORT.md) — refusing to mirror unverified bytes."
+            exit 1
+          fi
+          actual=$(sha256sum "$ASSET" | awk '{print $1}')
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::Checksum mismatch for $ASSET (expected $expected, got $actual)."
+            exit 1
+          fi
+          echo "Checksum OK: $actual"
+
+      - name: Publish mirror release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          ASSET: ${{ steps.resolve.outputs.asset }}
+          SOURCE_REPO: ${{ steps.resolve.outputs.repo }}
+        run: |
+          set -euo pipefail
+          notes="Mirror of \`$SOURCE_REPO@$TAG\` for the C#/WASM web export.
+
+          Byte-identical to upstream and verified against the SHA-256 pinned in
+          \`.github/editor-checksums.txt\` before upload. Exists so the export pipeline does not
+          depend on a third-party release staying published — see docs/WEB_EXPORT_ROADMAP.md.
+
+          Not a fork and not modified. To use it, set \`GODOT_FORK_REPO\` in
+          \`.github/web-toolchain.env\` to this repository."
+
+          # Idempotent: re-running replaces the asset rather than failing on an existing tag.
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ASSET" --repo "${{ github.repository }}" --clobber
+          else
+            gh release create "$TAG" "$ASSET" --repo "${{ github.repository }}" \
+              --title "Mirrored editor $TAG" --notes "$notes"
+          fi
+
+          echo "### Mirrored \`$ASSET\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Point \`GODOT_FORK_REPO\` in \`.github/web-toolchain.env\` at \`${{ github.repository }}\` to use it." >> "$GITHUB_STEP_SUMMARY"

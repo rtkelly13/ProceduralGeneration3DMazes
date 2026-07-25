@@ -58,6 +58,55 @@ try {
   if (fatalErrors.length) {
     throw new Error("Fatal runtime error(s):\n" + fatalErrors.join("\n"));
   }
+
+  // Report whether the in-app test bridge came up under this (patched-template) build.
+  // Reported, not asserted: the bridge is an automation aid, and a build without it is still
+  // a working build — failing the smoke test over it would block deploys for no user-visible
+  // reason. But it is the one thing unit and scene tests cannot answer (see
+  // docs/TEST_BRIDGE.md -> "Verification status"), so every deploy answers it for free
+  // instead of waiting for someone to check by hand.
+  const bridgeUrl = url + (url.includes("?") ? "&" : "?") + "test=1";
+  console.log(`→ Checking test bridge at ${bridgeUrl}`);
+  const probe = await browser.newPage();
+  try {
+    await probe.goto(bridgeUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await probe.waitForFunction(() => self.crossOriginIsolated === true, { timeout: 60_000 });
+    const ready = await probe
+      .waitForFunction(() => window.__mazeTestApi === "1", { timeout: BOOT_TIMEOUT_MS })
+      .then(() => true)
+      .catch(() => false);
+
+    if (ready) {
+      const state = await probe.evaluate(() => window.__mazeState ?? null);
+      console.log("✅ TEST BRIDGE PRESENT — set MAZE_TEST_BRIDGE=1 to enable the browser suites");
+      console.log("   window.__mazeState:", String(state).slice(0, 300));
+      if (process.env.GITHUB_STEP_SUMMARY) {
+        await import("node:fs").then((fs) =>
+          fs.appendFileSync(
+            process.env.GITHUB_STEP_SUMMARY,
+            "### Test bridge: **present** ✅\n\nSet `MAZE_TEST_BRIDGE=1` in `web-export.yml` " +
+              "to un-skip the Playwright functional and visual suites.\n",
+          ),
+        );
+      }
+    } else {
+      console.log("⚠️  TEST BRIDGE ABSENT — window.__mazeTestApi never became \"1\".");
+      console.log("   The deploy is fine; the browser suites stay skipped. See docs/TEST_BRIDGE.md.");
+      if (process.env.GITHUB_STEP_SUMMARY) {
+        await import("node:fs").then((fs) =>
+          fs.appendFileSync(
+            process.env.GITHUB_STEP_SUMMARY,
+            "### Test bridge: **absent** ⚠️\n\n`window.__mazeTestApi` never became `\"1\"`. " +
+              "Keep `MAZE_TEST_BRIDGE=0`. Check the Godot console for a `TestBridge: enabled` " +
+              "line — see docs/TEST_BRIDGE.md.\n",
+          ),
+        );
+      }
+    }
+  } finally {
+    await probe.close();
+  }
+
   console.log("✅ SMOKE PASS");
 } finally {
   await browser.close();
