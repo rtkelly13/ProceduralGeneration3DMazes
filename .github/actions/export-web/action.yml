@@ -59,6 +59,12 @@ outputs:
   template_version:
     description: "The export-template version actually used for this export"
     value: ${{ steps.toolchain.outputs.template_version }}
+  build_commit:
+    description: >
+      The commit this export was actually stamped with. Prefer this over github.sha when
+      asserting what a deploy serves: for issue_comment-triggered runs github.sha is the
+      default branch, not the PR head that was built.
+    value: ${{ steps.stamp.outputs.commit }}
 
 runs:
   using: composite
@@ -102,16 +108,77 @@ runs:
         "template_version=$template"        >> $env:GITHUB_OUTPUT
         "asset=Godot_v${forkTag}_mono_web_export_win64.zip" >> $env:GITHUB_OUTPUT
 
-    - name: Stamp build time
+    - name: Resolve build stamp
       id: stamp
       shell: pwsh
+      env:
+        IN_COMMIT: ${{ inputs.build_commit }}
+        IN_BRANCH: ${{ inputs.build_branch }}
+        IN_REPOSITORY: ${{ inputs.build_repository }}
+        IN_RUN_ID: ${{ inputs.build_run_id }}
+        IN_RUN_ATTEMPT: ${{ inputs.build_run_attempt }}
+        CTX_REPOSITORY: ${{ github.repository }}
+        CTX_RUN_ID: ${{ github.run_id }}
+        CTX_RUN_ATTEMPT: ${{ github.run_attempt }}
       run: |
-        # Generated here rather than passed in, so it records when the artefact was actually
-        # produced. ISO-8601 UTC, and deliberately the same string the About screen displays
-        # and build-info.json carries — the three are meant to be compared literally.
-        $ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-        "timestamp=$ts" >> $env:GITHUB_OUTPUT
-        Write-Host "Build timestamp: $ts"
+        # Derived HERE, with the caller's inputs as optional overrides, because the caller
+        # cannot always be trusted to supply them.
+        #
+        # A `/preview` run proved why: for issue_comment events GitHub loads the WORKFLOW FILE
+        # from the default branch, while the composite action comes from the checked-out PR
+        # head. A PR that adds `with: build_commit:` therefore has its own caller ignored, and
+        # every caller-supplied field arrived empty — the artefact built fine and reported
+        # itself as untraceable. Reading the commit from the checkout instead makes the stamp
+        # correct no matter which caller invoked us, or whether it passed anything at all.
+        function Resolve-Stamp($override, $fallback, $name) {
+          if (-not [string]::IsNullOrWhiteSpace($override)) { return $override.Trim() }
+          return $fallback
+        }
+
+        # The commit that is actually checked out — the thing being built, by definition.
+        $gitCommit = ""
+        try {
+          $gitCommit = (git rev-parse HEAD 2>$null | Out-String).Trim()
+        } catch {
+          Write-Host "::warning::git rev-parse HEAD failed; build will be unstamped."
+        }
+        if ($gitCommit -notmatch '^[0-9a-fA-F]{40}$') { $gitCommit = "" }
+
+        # A checkout by SHA is detached, so this is usually "HEAD" — not a branch name. Only
+        # report it when it is a real one; a wrong branch is worse than a missing one.
+        $gitBranch = ""
+        try {
+          $b = (git rev-parse --abbrev-ref HEAD 2>$null | Out-String).Trim()
+          if ($b -and $b -ne "HEAD") { $gitBranch = $b }
+        } catch { }
+
+        $commit     = Resolve-Stamp $env:IN_COMMIT      $gitCommit            'commit'
+        $branch     = Resolve-Stamp $env:IN_BRANCH      $gitBranch            'branch'
+        $repository = Resolve-Stamp $env:IN_REPOSITORY  $env:CTX_REPOSITORY   'repository'
+        $runId      = Resolve-Stamp $env:IN_RUN_ID      $env:CTX_RUN_ID       'runId'
+        $runAttempt = Resolve-Stamp $env:IN_RUN_ATTEMPT $env:CTX_RUN_ATTEMPT  'runAttempt'
+
+        # Recorded here so it reflects when the artefact was actually produced. The same
+        # string reaches the About screen and build-info.json — they are meant to be
+        # compared literally.
+        $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+        "commit=$commit"         >> $env:GITHUB_OUTPUT
+        "branch=$branch"         >> $env:GITHUB_OUTPUT
+        "repository=$repository" >> $env:GITHUB_OUTPUT
+        "run_id=$runId"          >> $env:GITHUB_OUTPUT
+        "run_attempt=$runAttempt" >> $env:GITHUB_OUTPUT
+        "timestamp=$timestamp"   >> $env:GITHUB_OUTPUT
+
+        Write-Host "Build stamp:"
+        Write-Host "  commit     = $(if ($commit) { $commit } else { '(none — build will report itself untraceable)' })"
+        Write-Host "  branch     = $branch"
+        Write-Host "  repository = $repository"
+        Write-Host "  run        = $runId (attempt $runAttempt)"
+        Write-Host "  timestamp  = $timestamp"
+        if (-not $commit) {
+          Write-Host "::warning::No commit resolved — the About screen will report this as a local, untraceable build."
+        }
 
     - name: Guard against version drift
       shell: pwsh
@@ -278,11 +345,11 @@ runs:
     - name: Restore / build (net9.0)
       shell: pwsh
       env:
-        BuildCommit: ${{ inputs.build_commit }}
-        BuildBranch: ${{ inputs.build_branch }}
-        BuildRepository: ${{ inputs.build_repository }}
-        BuildRunId: ${{ inputs.build_run_id }}
-        BuildRunAttempt: ${{ inputs.build_run_attempt }}
+        BuildCommit: ${{ steps.stamp.outputs.commit }}
+        BuildBranch: ${{ steps.stamp.outputs.branch }}
+        BuildRepository: ${{ steps.stamp.outputs.repository }}
+        BuildRunId: ${{ steps.stamp.outputs.run_id }}
+        BuildRunAttempt: ${{ steps.stamp.outputs.run_attempt }}
         BuildTimestampUtc: ${{ steps.stamp.outputs.timestamp }}
       run: dotnet build ProceduralGeneration3DMazes.csproj -c ExportRelease /p:GodotTargetPlatform=web
 
@@ -295,11 +362,11 @@ runs:
     - name: Export Web (headless CLI)
       shell: pwsh
       env:
-        BuildCommit: ${{ inputs.build_commit }}
-        BuildBranch: ${{ inputs.build_branch }}
-        BuildRepository: ${{ inputs.build_repository }}
-        BuildRunId: ${{ inputs.build_run_id }}
-        BuildRunAttempt: ${{ inputs.build_run_attempt }}
+        BuildCommit: ${{ steps.stamp.outputs.commit }}
+        BuildBranch: ${{ steps.stamp.outputs.branch }}
+        BuildRepository: ${{ steps.stamp.outputs.repository }}
+        BuildRunId: ${{ steps.stamp.outputs.run_id }}
+        BuildRunAttempt: ${{ steps.stamp.outputs.run_attempt }}
         BuildTimestampUtc: ${{ steps.stamp.outputs.timestamp }}
       run: |
         New-Item -ItemType Directory -Force -Path "build/web" | Out-Null
@@ -317,11 +384,11 @@ runs:
     - name: Write build-info.json
       shell: pwsh
       env:
-        BUILD_COMMIT: ${{ inputs.build_commit }}
-        BUILD_BRANCH: ${{ inputs.build_branch }}
-        BUILD_REPOSITORY: ${{ inputs.build_repository }}
-        BUILD_RUN_ID: ${{ inputs.build_run_id }}
-        BUILD_RUN_ATTEMPT: ${{ inputs.build_run_attempt }}
+        BUILD_COMMIT: ${{ steps.stamp.outputs.commit }}
+        BUILD_BRANCH: ${{ steps.stamp.outputs.branch }}
+        BUILD_REPOSITORY: ${{ steps.stamp.outputs.repository }}
+        BUILD_RUN_ID: ${{ steps.stamp.outputs.run_id }}
+        BUILD_RUN_ATTEMPT: ${{ steps.stamp.outputs.run_attempt }}
         BUILD_TIMESTAMP: ${{ steps.stamp.outputs.timestamp }}
         FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
       run: |

@@ -67,7 +67,26 @@ GitHub Actions
         └─ writes build/web/build-info.json (sidecar, same inputs)
 ```
 
-Two decisions are load-bearing.
+Three decisions are load-bearing.
+
+**The action derives the stamp itself; caller inputs are only overrides.** A `/preview` run
+proved why. For `issue_comment` events GitHub loads the **workflow file from the default
+branch**, while a composite action is read from the *checked-out* PR head. So a PR that adds
+`with: build_commit: …` has its own caller ignored: the action ran, `build-info.json` was
+written, and every caller-supplied field arrived **empty**:
+
+```json
+{ "commit": "", "branch": "", "repository": "", "runId": "",
+  "builtUtc": "2026-07-26T12:12:49Z", "godotEditor": "4.7.1-stable" }
+```
+
+Only the fields computed *inside* the action survived. The action now reads the commit from the
+checkout (`git rev-parse HEAD`) and the repository and run from the `github` context, so the
+stamp is correct regardless of which caller invoked it or whether it passed anything. The branch
+is left blank when the checkout is detached — a wrong branch is worse than a missing one.
+
+It also exposes a `build_commit` **output**. Assert against that rather than `github.sha`, which
+is the default branch — not the PR head — on an `issue_comment`-triggered run.
 
 **Compile-time constants, not a data file.** The obvious design — ship a `build-info.json` inside
 the app and read it at startup — does not survive this project's web export.
@@ -99,6 +118,31 @@ Each of these was executed, not reasoned about:
 Not verified here: behaviour inside the **patched web export template**, which needs a real
 deploy — the same standing gap as the test bridge (see
 [TEST_BRIDGE.md](./TEST_BRIDGE.md#verification-status)).
+
+## The smoke test's boot check was vacuous
+
+Worth recording, because it invalidated a claim this project had been relying on. The check read:
+
+```js
+// waiting for engine to boot (canvas sized)…
+() => { const c = document.querySelector("canvas"); return c && c.width > 0 && c.height > 0; }
+```
+
+An untouched `<canvas>` defaults to **300×150**, so `width > 0 && height > 0` is true before the
+engine does anything. On a real preview it returned in **0.02 s** and reported
+`canvas: {"w":300,"h":150}` followed by `✅ SMOKE PASS` — the default size, meaning Godot had not
+resized it. Every "the deploy boots" result from this check was therefore unproven.
+
+It now waits for the canvas to stop being the default size, which only the engine can cause, and
+fails with the stuck dimensions and a pointer to the console output. Verified against a local
+server serving both cases: a canvas that never resizes now fails, one that resizes passes, and a
+`build-info.json` mismatch fails with both commits named. A sidecar that answers with HTML and
+HTTP 200 — what an SPA catch-all does — warns instead of throwing a bare `SyntaxError`, which is
+how it behaved when first written.
+
+The lesson generalises: **a boot check must assert something only a booted app can produce.**
+Presence of an element, or a dimension that is non-zero by default, is satisfied by the empty
+page you are trying to rule out.
 
 ## For automation
 

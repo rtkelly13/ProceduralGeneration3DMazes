@@ -57,6 +57,7 @@ jobs:
     runs-on: windows-latest
     outputs:
       url: ${{ steps.deploy.outputs.url }}
+      build_commit: ${{ steps.export.outputs.build_commit }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -66,6 +67,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Export web (WASM)
+        id: export
         uses: ./.github/actions/export-web
         with:
           # Pass dispatch overrides straight through; blank resolves from
@@ -123,8 +125,9 @@ jobs:
         env:
           SMOKE_URL: ${{ needs.production.outputs.url }}
           # Asserts the alias actually serves the artefact this run built, rather than a
-          # previous one that a failed promotion left in place.
-          EXPECT_COMMIT: ${{ github.sha }}
+          # previous one that a failed promotion left in place. Taken from the export itself
+          # rather than github.sha, which is the wrong commit for issue_comment-triggered runs.
+          EXPECT_COMMIT: ${{ needs.production.outputs.build_commit }}
         run: node .github/smoke/smoke.mjs
 
 
@@ -193,6 +196,7 @@ jobs:
       pull-requests: write
     outputs:
       url: ${{ steps.deploy.outputs.url }}
+      build_commit: ${{ steps.export.outputs.build_commit }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -220,6 +224,7 @@ jobs:
           ref: ${{ steps.pr.outputs.sha }}
 
       - name: Export web (WASM)
+        id: export
         uses: ./.github/actions/export-web
         with:
           github_token: ${{ github.token }}
@@ -277,6 +282,7 @@ jobs:
         id: smoke
         env:
           SMOKE_URL: ${{ needs.preview.outputs.url }}
+          EXPECT_COMMIT: ${{ needs.preview.outputs.build_commit }}
         run: node .github/smoke/smoke.mjs
       - name: Report smoke result on PR
         if: always()

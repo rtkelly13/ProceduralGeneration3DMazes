@@ -41,14 +41,33 @@ try {
   if (!env.hasCanvas) throw new Error("No <canvas> element present.");
 
   // Boot signal: Godot resizes the canvas to the viewport once the engine starts.
-  console.log("  waiting for engine to boot (canvas sized)…");
-  await page.waitForFunction(
-    () => {
+  //
+  // This must NOT be `width > 0 && height > 0`. An untouched <canvas> defaults to 300x150, so
+  // that predicate is already true before the engine does anything — it made this check pass in
+  // 0.02s on a build that had not booted, which is how it went unnoticed. Assert the canvas is
+  // no longer the default size, which only the engine can cause.
+  const DEFAULT_CANVAS = { w: 300, h: 150 };
+  console.log("  waiting for engine to boot (canvas resized off the 300x150 default)…");
+  try {
+    await page.waitForFunction(
+      (def) => {
+        const c = document.querySelector("canvas");
+        return !!c && (c.width !== def.w || c.height !== def.h);
+      },
+      DEFAULT_CANVAS,
+      { timeout: BOOT_TIMEOUT_MS },
+    );
+  } catch {
+    const stuck = await page.evaluate(() => {
       const c = document.querySelector("canvas");
-      return c && c.width > 0 && c.height > 0;
-    },
-    { timeout: BOOT_TIMEOUT_MS },
-  );
+      return c ? { w: c.width, h: c.height } : null;
+    });
+    throw new Error(
+      `Engine did not boot: canvas still ${JSON.stringify(stuck)} after ${BOOT_TIMEOUT_MS}ms. ` +
+        `A canvas at the 300x150 default means Godot never started — check the browser console ` +
+        `output above for a WASM or .NET runtime failure.`,
+    );
+  }
   const size = await page.evaluate(() => {
     const c = document.querySelector("canvas");
     return { w: c.width, h: c.height };
@@ -69,12 +88,27 @@ try {
   console.log("→ Checking served build identity (build-info.json)");
   const infoUrl = url.replace(/\/+$/, "") + "/build-info.json";
   const infoResp = await page.request.get(infoUrl);
+  // Parsed defensively rather than with .json(): a host with an SPA-style catch-all answers an
+  // unknown path with index.html and HTTP 200, which would throw a bare SyntaxError here and
+  // fail the deploy for the wrong reason. Observed while testing this check.
+  let info = null;
   if (!infoResp.ok()) {
     // Predates this file, or the export step changed — worth flagging but not worth failing a
     // deploy over, since nothing user-facing depends on it.
     console.log(`⚠️  build-info.json not served (HTTP ${infoResp.status()}) — cannot verify build identity.`);
   } else {
-    const info = await infoResp.json();
+    const body = await infoResp.text();
+    try {
+      info = JSON.parse(body);
+    } catch {
+      console.log(
+        `⚠️  build-info.json was not JSON (first 80 chars: ${JSON.stringify(body.slice(0, 80))}) — ` +
+          `cannot verify build identity from the sidecar.`,
+      );
+    }
+  }
+
+  if (info) {
     console.log("  build-info.json:", JSON.stringify(info));
     if (!expectedCommit) {
       console.log("  EXPECT_COMMIT not set — reporting the served commit without asserting it.");
