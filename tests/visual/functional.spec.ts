@@ -55,9 +55,9 @@ test.describe("maze web build — functional", () => {
   test.skip(!process.env.MAZE_URL, "MAZE_URL not set — nothing deployed to drive.");
   test.skip(
     process.env.MAZE_TEST_BRIDGE !== "1",
-    "Test bridge not confirmed present in the deployed build yet. " +
-      "Set MAZE_TEST_BRIDGE=1 once a deploy includes scripts/testing/TestBridge.cs — " +
-      "skipping rather than failing so this cannot report a false red.",
+    "Test bridge disabled (MAZE_TEST_BRIDGE != 1). It is confirmed working in the patched web " +
+      "export, so CI sets this to 1; the switch remains only so the suite can be turned off " +
+      "deliberately.",
   );
 
   test("bridge comes up and reports app state", async ({ page }) => {

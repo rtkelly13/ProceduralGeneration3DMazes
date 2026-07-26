@@ -180,12 +180,15 @@ jobs:
   # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
   # Screenshotting a build that didn't start just yields a blank baseline.
   #
-  # MAZE_TEST_BRIDGE gates both browser suites. The in-app bridge
-  # (scripts/testing/TestBridge.cs) provides URL seeding and the state channel they need. It
-  # is unit- and scene-tested, but whether it survives the *patched* web export template is
-  # unproven until a deploy exists to check against -- so both suites skip rather than risk a
-  # false red. Flip to "1" after confirming window.__mazeTestApi === "1" on a deploy.
-  # See docs/TEST_BRIDGE.md -> "Enabling in CI".
+  # MAZE_TEST_BRIDGE is now "1": the in-app bridge (scripts/testing/TestBridge.cs) is CONFIRMED
+  # working inside the patched web export -- verified on a real deploy, where
+  # window.__mazeTestApi became "1" and __mazeState reported ready with the build stamp. That was
+  # the last unknown blocking these suites. See docs/TEST_BRIDGE.md -> "Verification status".
+  #
+  # MAZE_VISUAL_BASELINES stays "0" for a different reason: no baseline PNGs are committed, and
+  # Playwright fails a missing snapshot on CI rather than creating one, so enabling the visual
+  # project would redden every deploy for a reason unrelated to the build. The functional suite
+  # needs no baselines and runs. See docs/VISUAL_REGRESSION.md for generating them.
   visual-production:
     needs: [production, smoke-production]
     if: needs.production.outputs.url != ''
@@ -209,14 +212,16 @@ jobs:
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.production.outputs.url }}
-          MAZE_TEST_BRIDGE: "0"
+          MAZE_TEST_BRIDGE: "1"
         run: npx playwright test --project=functional
 
       - name: Visual regression
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.production.outputs.url }}
-          MAZE_TEST_BRIDGE: "0"
+          MAZE_TEST_BRIDGE: "1"
+          # Flip to "1" in the same commit that adds tests/visual/maze.spec.ts-snapshots/.
+          MAZE_VISUAL_BASELINES: "0"
         run: npx playwright test --project=maze
 
       - name: Upload visual diff on failure
@@ -342,12 +347,15 @@ jobs:
   # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
   # Screenshotting a build that didn't start just yields a blank baseline.
   #
-  # MAZE_TEST_BRIDGE gates both browser suites. The in-app bridge
-  # (scripts/testing/TestBridge.cs) provides URL seeding and the state channel they need. It
-  # is unit- and scene-tested, but whether it survives the *patched* web export template is
-  # unproven until a deploy exists to check against -- so both suites skip rather than risk a
-  # false red. Flip to "1" after confirming window.__mazeTestApi === "1" on a deploy.
-  # See docs/TEST_BRIDGE.md -> "Enabling in CI".
+  # MAZE_TEST_BRIDGE is now "1": the in-app bridge (scripts/testing/TestBridge.cs) is CONFIRMED
+  # working inside the patched web export -- verified on a real deploy, where
+  # window.__mazeTestApi became "1" and __mazeState reported ready with the build stamp. That was
+  # the last unknown blocking these suites. See docs/TEST_BRIDGE.md -> "Verification status".
+  #
+  # MAZE_VISUAL_BASELINES stays "0" for a different reason: no baseline PNGs are committed, and
+  # Playwright fails a missing snapshot on CI rather than creating one, so enabling the visual
+  # project would redden every deploy for a reason unrelated to the build. The functional suite
+  # needs no baselines and runs. See docs/VISUAL_REGRESSION.md for generating them.
   visual-preview:
     needs: [preview, smoke-preview]
     if: needs.preview.outputs.url != ''
@@ -371,14 +379,16 @@ jobs:
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.preview.outputs.url }}
-          MAZE_TEST_BRIDGE: "0"
+          MAZE_TEST_BRIDGE: "1"
         run: npx playwright test --project=functional
 
       - name: Visual regression
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.preview.outputs.url }}
-          MAZE_TEST_BRIDGE: "0"
+          MAZE_TEST_BRIDGE: "1"
+          # Flip to "1" in the same commit that adds tests/visual/maze.spec.ts-snapshots/.
+          MAZE_VISUAL_BASELINES: "0"
         run: npx playwright test --project=maze
 
       - name: Upload visual diff on failure

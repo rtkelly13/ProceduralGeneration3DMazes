@@ -206,10 +206,14 @@ deterministic seeding, plus committed baseline PNGs.
 | `test.yml` | `visual-harness` | every PR |
 | `web-export.yml` | `smoke-*` → `visual-*` (functional + visual) | merge to `main`, or `/preview` |
 
-Both browser suites are **gated on `MAZE_TEST_BRIDGE=1`** and currently skip. The bridge is
-unit- and scene-tested, but whether it behaves under the *patched* web export template is
-unproven until a deploy exists to check. Skipping beats a false red — see
-[TEST_BRIDGE.md → Enabling in CI](./TEST_BRIDGE.md#enabling-in-ci).
+The **functional** suite now runs on every deploy: the bridge is confirmed working inside the
+patched web export template, verified on a real deploy — see
+[TEST_BRIDGE.md → Verification status](./TEST_BRIDGE.md#verification-status).
+
+The **visual** suite still skips, on `MAZE_VISUAL_BASELINES` rather than on the bridge. Its
+blocker is now narrower and concrete: no baseline PNGs are committed, and Playwright fails a
+missing snapshot on CI rather than creating one, so enabling it would redden every deploy for a
+reason unrelated to the build. See [VISUAL_REGRESSION.md](./VISUAL_REGRESSION.md).
 
 The scene-test job downloads the **official upstream** Linux editor, checksum-pinned in
 [`.github/editor-checksums.txt`](../.github/editor-checksums.txt) exactly like the patched
