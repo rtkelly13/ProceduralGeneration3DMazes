@@ -34,6 +34,12 @@ jobs:
       - name: Test
         run: dotnet test tests/ProceduralMaze.Tests.csproj -c Debug --nologo
 
+      # The CI step bodies live in .github/scripts and .github/actions/*/scripts rather than in
+      # YAML block scalars. A script cannot see `${{ ... }}`, so every value it needs must arrive
+      # via `env:` — and a missing one reads as empty rather than failing. This catches that.
+      - name: Check workflow scripts are wired up
+        run: python3 .github/scripts/check-workflow-scripts.py
+
   # In-engine tests for the Godot scene/UI layer, which the NUnit suite cannot reach (it
   # deliberately builds without the Godot SDK). Runs the official upstream Linux editor
   # headless -- the patched Windows fork is only needed for the *web export*, not for this.
@@ -71,19 +77,7 @@ jobs:
             "https://github.com/godotengine/godot-builds/releases/download/$GODOT_VERSION/$GODOT_ASSET.zip"
 
       - name: Verify Godot checksum
-        run: |
-          # Same supply-chain guard as the patched web editor: never run an unverified binary.
-          expected=$(grep -v '^\s*#' .github/editor-checksums.txt | grep "$GODOT_ASSET.zip" | awk '{print $1}')
-          if [ -z "$expected" ]; then
-            echo "::error::No pinned checksum for $GODOT_ASSET.zip in .github/editor-checksums.txt"
-            exit 1
-          fi
-          actual=$(sha256sum "$RUNNER_TEMP/godot/$GODOT_ASSET.zip" | awk '{print $1}')
-          if [ "$expected" != "$actual" ]; then
-            echo "::error::Checksum mismatch for $GODOT_ASSET.zip (expected $expected, got $actual)"
-            exit 1
-          fi
-          echo "Checksum OK: $actual"
+        run: bash .github/scripts/verify-godot-checksum.sh
 
       - name: Extract Godot
         run: |

@@ -195,6 +195,22 @@ Prefer `CultureInfo.InvariantCulture` explicitly, and keep `scripts/maze/` free 
 platform-specific BCL calls. If you add anything in the table above, **test it on web
 explicitly** — a green desktop CI proves nothing about the browser build.
 
+**CI step bodies live in script files, not YAML.** Anything beyond a one-line command belongs in
+`.github/scripts/` (workflows) or `.github/actions/export-web/scripts/` (the composite action),
+invoked from a one-line `run:`. Two rules follow from that:
+
+- **Pass values through `env:`, never `${{ }}` inside the script.** A script file cannot see
+  `${{ ... }}`, and interpolating into a command line is also the injection-prone pattern.
+  `python3 .github/scripts/check-workflow-scripts.py` (run on every PR) fails if a script reads
+  an environment variable its step does not provide — the failure mode is otherwise an empty
+  string and silently wrong behaviour, not an error.
+- **A bare `&` cannot start a YAML scalar** — it is the anchor indicator. Quote the invocation:
+  `run: '& "$env:GITHUB_ACTION_PATH/scripts/x.ps1"'`.
+
+The reason for all of this: a long script inside a block scalar cannot be linted or run outside
+CI, and some constructs simply do not survive it — a PowerShell here-string needs its terminator
+at column 0, which ends the YAML block.
+
 **To deploy and check a branch on the web, dispatch `web-export.yml` on that ref**
 (`deploy_target` defaults to `preview`); an agent can do this through the GitHub API with no
 comment and no owner privileges. Prefer it over commenting `/preview`, which is an

@@ -107,46 +107,7 @@ jobs:
           GIT_REF: ${{ github.ref }}
           IN_TARGET: ${{ github.event.inputs.deploy_target }}
           BUILD_COMMIT: ${{ steps.export.outputs.build_commit }}
-        run: |
-          Copy-Item infra/vercel/vercel.json build/web/vercel.json -Force
-          npm i -g vercel@latest
-
-          # Target is STATED, not inferred from the ref. It used to be "main means --prod",
-          # which made a dispatch the wrong branch away from silently publishing to
-          # maze.ryankelly.dev -- an unacceptable footgun now that agents dispatch this
-          # workflow to get preview URLs (see docs/BUILD_VERIFICATION.md).
-          $target = if ($env:EVENT_NAME -eq 'push') { 'production' }
-                    elseif ([string]::IsNullOrWhiteSpace($env:IN_TARGET)) { 'preview' }
-                    else { $env:IN_TARGET }
-
-          if ($target -eq 'production' -and $env:GIT_REF -ne 'refs/heads/main') {
-            throw "deploy_target=production is only allowed on refs/heads/main (got $env:GIT_REF). Use 'preview'."
-          }
-
-          if ($target -eq 'production') {
-            $url = (vercel deploy build/web --prod --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-          } else {
-            $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-          }
-
-          "url=$url" >> $env:GITHUB_OUTPUT
-          "target=$target" >> $env:GITHUB_OUTPUT
-
-          # A single machine-readable line so a caller reading the job log (an agent via the
-          # GitHub API, for instance) does not have to parse vercel's own chatter.
-          Write-Host "DEPLOY_URL=$url"
-          Write-Host "DEPLOY_TARGET=$target"
-
-          # Also in the step summary, which is one short API call rather than a whole log.
-          @(
-            "### $target deploy",
-            "",
-            "| | |",
-            "|---|---|",
-            "| URL | <$url> |",
-            "| Commit | ``$env:BUILD_COMMIT`` |",
-            "| Build info | <$url/build-info.json> |"
-          ) -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+        run: '& "$env:GITHUB_WORKSPACE/.github/scripts/deploy-vercel.ps1"'
 
       - name: Skip notice (no secrets)
         if: env.VERCEL_TOKEN == ''
@@ -261,13 +222,10 @@ jobs:
       - name: Resolve PR head SHA
         id: pr
         shell: pwsh
-        run: |
-          $sha = gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefOid -q ".headRefOid"
-          "sha=$sha" >> $env:GITHUB_OUTPUT
-          # Needed for the build stamp: a preview builds the PR head, so github.sha (the
-          # default branch, for an issue_comment event) would stamp the wrong commit entirely.
-          $ref = gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName -q ".headRefName"
-          "ref=$ref" >> $env:GITHUB_OUTPUT
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: '& "$env:GITHUB_WORKSPACE/.github/scripts/resolve-pr-head.ps1"'
 
       - name: Checkout PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -290,12 +248,15 @@ jobs:
         id: deploy
         if: env.VERCEL_TOKEN != ''
         shell: pwsh
-        run: |
-          Copy-Item infra/vercel/vercel.json build/web/vercel.json -Force
-          npm i -g vercel@latest
-          $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-          "url=$url" >> $env:GITHUB_OUTPUT
-          Write-Host "Preview: $url"
+        env:
+          # Same script as the production job. IN_TARGET is pinned to preview rather than left
+          # unset: a /preview must never be able to reach production, and stating it means the
+          # script's behaviour does not depend on how PowerShell reads an absent env var.
+          IN_TARGET: "preview"
+          EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+          BUILD_COMMIT: ${{ steps.export.outputs.build_commit }}
+        run: '& "$env:GITHUB_WORKSPACE/.github/scripts/deploy-vercel.ps1"'
 
       - name: Comment preview URL
         if: env.VERCEL_TOKEN != ''
@@ -335,15 +296,14 @@ jobs:
           SMOKE_URL: ${{ needs.preview.outputs.url }}
           EXPECT_COMMIT: ${{ needs.preview.outputs.build_commit }}
         run: node .github/smoke/smoke.mjs
+
       - name: Report smoke result on PR
         if: always()
-        run: |
-          if [ "${{ steps.smoke.outcome }}" = "success" ]; then
-            gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ Smoke test passed on the preview (boots, cross-origin isolated, canvas rendered)."
-          else
-            gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ Smoke test FAILED on the preview — the build served but did not boot correctly. Check the workflow logs."
-          fi
-
+        env:
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: bash .github/scripts/report-smoke-result.sh
   # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
   # Screenshotting a build that didn't start just yields a blank baseline.
   #

@@ -76,37 +76,7 @@ runs:
         IN_FORK_REPO: ${{ inputs.fork_repo }}
         IN_FORK_TAG: ${{ inputs.godot_fork_tag }}
         IN_TEMPLATE_VERSION: ${{ inputs.template_version }}
-      run: |
-        # Read the shared toolchain file, then let non-empty inputs override it.
-        $path = ".github/web-toolchain.env"
-        if (-not (Test-Path $path)) { throw "Missing $path — the web export toolchain versions live there. See docs/WEB_EXPORT.md." }
-        $cfg = @{}
-        foreach ($line in Get-Content $path) {
-          if ($line -match '^\s*#' -or $line -notmatch '=') { continue }
-          $k, $v = $line -split '=', 2
-          $cfg[$k.Trim()] = $v.Trim()
-        }
-
-        function Resolve-Value($inputValue, $key) {
-          if (-not [string]::IsNullOrWhiteSpace($inputValue)) {
-            Write-Host "$key = $inputValue (overridden by workflow input)"
-            return $inputValue
-          }
-          if (-not $cfg.ContainsKey($key) -or [string]::IsNullOrWhiteSpace($cfg[$key])) {
-            throw "$key is not set in .github/web-toolchain.env and no override was supplied."
-          }
-          Write-Host "$key = $($cfg[$key]) (from .github/web-toolchain.env)"
-          return $cfg[$key]
-        }
-
-        $forkRepo = Resolve-Value $env:IN_FORK_REPO       'GODOT_FORK_REPO'
-        $forkTag  = Resolve-Value $env:IN_FORK_TAG        'GODOT_FORK_TAG'
-        $template = Resolve-Value $env:IN_TEMPLATE_VERSION 'GODOT_TEMPLATE_VERSION'
-
-        "fork_repo=$forkRepo"               >> $env:GITHUB_OUTPUT
-        "fork_tag=$forkTag"                 >> $env:GITHUB_OUTPUT
-        "template_version=$template"        >> $env:GITHUB_OUTPUT
-        "asset=Godot_v${forkTag}_mono_web_export_win64.zip" >> $env:GITHUB_OUTPUT
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/resolve-toolchain.ps1"'
 
     - name: Resolve build stamp
       id: stamp
@@ -120,65 +90,7 @@ runs:
         CTX_REPOSITORY: ${{ github.repository }}
         CTX_RUN_ID: ${{ github.run_id }}
         CTX_RUN_ATTEMPT: ${{ github.run_attempt }}
-      run: |
-        # Derived HERE, with the caller's inputs as optional overrides, because the caller
-        # cannot always be trusted to supply them.
-        #
-        # A `/preview` run proved why: for issue_comment events GitHub loads the WORKFLOW FILE
-        # from the default branch, while the composite action comes from the checked-out PR
-        # head. A PR that adds `with: build_commit:` therefore has its own caller ignored, and
-        # every caller-supplied field arrived empty — the artefact built fine and reported
-        # itself as untraceable. Reading the commit from the checkout instead makes the stamp
-        # correct no matter which caller invoked us, or whether it passed anything at all.
-        function Resolve-Stamp($override, $fallback, $name) {
-          if (-not [string]::IsNullOrWhiteSpace($override)) { return $override.Trim() }
-          return $fallback
-        }
-
-        # The commit that is actually checked out — the thing being built, by definition.
-        $gitCommit = ""
-        try {
-          $gitCommit = (git rev-parse HEAD 2>$null | Out-String).Trim()
-        } catch {
-          Write-Host "::warning::git rev-parse HEAD failed; build will be unstamped."
-        }
-        if ($gitCommit -notmatch '^[0-9a-fA-F]{40}$') { $gitCommit = "" }
-
-        # A checkout by SHA is detached, so this is usually "HEAD" — not a branch name. Only
-        # report it when it is a real one; a wrong branch is worse than a missing one.
-        $gitBranch = ""
-        try {
-          $b = (git rev-parse --abbrev-ref HEAD 2>$null | Out-String).Trim()
-          if ($b -and $b -ne "HEAD") { $gitBranch = $b }
-        } catch { }
-
-        $commit     = Resolve-Stamp $env:IN_COMMIT      $gitCommit            'commit'
-        $branch     = Resolve-Stamp $env:IN_BRANCH      $gitBranch            'branch'
-        $repository = Resolve-Stamp $env:IN_REPOSITORY  $env:CTX_REPOSITORY   'repository'
-        $runId      = Resolve-Stamp $env:IN_RUN_ID      $env:CTX_RUN_ID       'runId'
-        $runAttempt = Resolve-Stamp $env:IN_RUN_ATTEMPT $env:CTX_RUN_ATTEMPT  'runAttempt'
-
-        # Recorded here so it reflects when the artefact was actually produced. The same
-        # string reaches the About screen and build-info.json — they are meant to be
-        # compared literally.
-        $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-
-        "commit=$commit"         >> $env:GITHUB_OUTPUT
-        "branch=$branch"         >> $env:GITHUB_OUTPUT
-        "repository=$repository" >> $env:GITHUB_OUTPUT
-        "run_id=$runId"          >> $env:GITHUB_OUTPUT
-        "run_attempt=$runAttempt" >> $env:GITHUB_OUTPUT
-        "timestamp=$timestamp"   >> $env:GITHUB_OUTPUT
-
-        Write-Host "Build stamp:"
-        Write-Host "  commit     = $(if ($commit) { $commit } else { '(none — build will report itself untraceable)' })"
-        Write-Host "  branch     = $branch"
-        Write-Host "  repository = $repository"
-        Write-Host "  run        = $runId (attempt $runAttempt)"
-        Write-Host "  timestamp  = $timestamp"
-        if (-not $commit) {
-          Write-Host "::warning::No commit resolved — the About screen will report this as a local, untraceable build."
-        }
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/resolve-build-stamp.ps1"'
 
     - name: Guard against version drift
       shell: pwsh
@@ -186,52 +98,7 @@ runs:
         TEMPLATE_VERSION: ${{ steps.toolchain.outputs.template_version }}
         FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
         ASSET: ${{ steps.toolchain.outputs.asset }}
-      run: |
-        # The Godot.NET.Sdk version (csproj), the patched-editor tag, and the
-        # export-template folder must agree at PATCH level — comparing only
-        # major.minor lets a 4.7.0-vs-4.7.1 mismatch through, which is exactly the
-        # class of bump that happens most often. Catch it in seconds, before we
-        # download a 165 MB editor.
-        #
-        # Normalise the three spellings of the same version to a bare x.y[.z]:
-        #   csproj    "4.7.1"             -> 4.7.1     ("4.7.0" -> 4.7, see below)
-        #   template  "4.7.1.stable.mono" -> 4.7.1
-        #   fork tag  "4.7.1-stable"      -> 4.7.1
-        # Godot names x.y releases without a patch component, so an SDK version of
-        # "4.7.0" corresponds to template "4.7.stable.mono": strip a trailing ".0".
-        function Get-BareVersion([string]$s) {
-          return ($s -replace '[-.](stable|beta|rc|dev)[-.0-9]*.*$', '')
-        }
-
-        $csproj = Get-Content ProceduralGeneration3DMazes.csproj -Raw
-        if ($csproj -notmatch 'Godot\.NET\.Sdk/(\d+\.\d+\.\d+)') { throw "Could not parse Godot.NET.Sdk version from csproj." }
-        $sdkVersion = $Matches[1] -replace '\.0$', ''
-        $tplVersion = Get-BareVersion $env:TEMPLATE_VERSION
-        $tagVersion = Get-BareVersion $env:FORK_TAG
-
-        $mismatch = ($sdkVersion -ne $tplVersion) -or ($sdkVersion -ne $tagVersion)
-        if ($mismatch) {
-          # Built as an array rather than a here-string: a PowerShell here-string needs
-          # its closing "@ at column 0, which would terminate this YAML block scalar.
-          throw (@(
-            "Version drift - these must all describe the same Godot version:",
-            "  Godot.NET.Sdk (csproj)  -> $sdkVersion",
-            "  template_version        -> $tplVersion   (raw: $env:TEMPLATE_VERSION)",
-            "  godot_fork_tag          -> $tagVersion   (raw: $env:FORK_TAG)",
-            "Align them in ProceduralGeneration3DMazes.csproj and .github/web-toolchain.env.",
-            "See docs/WEB_EXPORT.md -> 'Updating the pinned editor'."
-          ) -join "`n")
-        }
-
-        # Fail fast if the editor we're about to fetch has no pinned checksum, rather
-        # than after spending a runner-minute downloading it.
-        $pinned = Get-Content .github/editor-checksums.txt |
-                  Where-Object { $_ -notmatch '^\s*#' -and $_ -match [regex]::Escape($env:ASSET) }
-        if (-not $pinned) {
-          throw "No pinned SHA-256 for '$env:ASSET' in .github/editor-checksums.txt — refusing to run an unverified binary. See docs/WEB_EXPORT.md -> 'Updating the pinned editor'."
-        }
-
-        Write-Host "Version check OK: Godot.NET.Sdk, templates and editor tag all agree on $sdkVersion (checksum pinned for $env:ASSET)."
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/check-version-drift.ps1"'
 
     - name: Set up .NET 9 SDK
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -266,26 +133,7 @@ runs:
       shell: pwsh
       env:
         ASSET: ${{ steps.toolchain.outputs.asset }}
-      run: |
-        # Runs on both fresh downloads and cache hits — verifies the exact bytes we execute.
-        # Match the expected filename explicitly: a restored cache must not be able to
-        # substitute a differently-named editor zip for the one we pinned.
-        $zip = Get-ChildItem "${env:RUNNER_TEMP}/godot-zip" -Filter *.zip |
-               Where-Object { $_.Name -eq $env:ASSET } | Select-Object -First 1
-        if (-not $zip) {
-          Write-Host "Contents of ${env:RUNNER_TEMP}/godot-zip:"
-          Get-ChildItem "${env:RUNNER_TEMP}/godot-zip" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.Name)" }
-          throw "Expected editor zip '$env:ASSET' not found (cache or download failed)."
-        }
-        $line = Get-Content .github/editor-checksums.txt |
-                Where-Object { $_ -notmatch '^\s*#' -and $_ -match [regex]::Escape($zip.Name) } | Select-Object -First 1
-        if (-not $line) { throw "No pinned checksum for '$($zip.Name)' in .github/editor-checksums.txt — refusing to run an unverified binary. See docs/WEB_EXPORT.md." }
-        $expected = (($line -split '\s+') | Where-Object { $_ })[0].ToLower()
-        $actual = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
-        if ($actual -ne $expected) {
-          throw "Checksum MISMATCH for $($zip.Name).`n  expected: $expected`n  actual:   $actual`nThe fork release may have been re-published — verify and update .github/editor-checksums.txt."
-        }
-        Write-Host "Checksum OK for $($zip.Name): $actual"
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/verify-editor-checksum.ps1"'
 
     - name: Extract editor
       shell: pwsh
@@ -296,47 +144,18 @@ runs:
     - name: Locate editor executable and bundle contents
       id: locate
       shell: pwsh
-      run: |
-        $root = "$env:RUNNER_TEMP/godot"
-        $exe = Get-ChildItem -Path $root -Recurse -Filter "*.exe" |
-               Where-Object { $_.Name -match "console" } | Select-Object -First 1
-        if (-not $exe) {
-          $exe = Get-ChildItem -Path $root -Recurse -Filter "*.exe" |
-                 Where-Object { $_.Name -notmatch "crash|handler" } | Select-Object -First 1
-        }
-        if (-not $exe) { throw "Could not find a Godot editor executable in the fork zip." }
-        Write-Host "Editor exe: $($exe.FullName)"
-        "godot_exe=$($exe.FullName)" >> $env:GITHUB_OUTPUT
-        "bundle_dir=$($exe.Directory.FullName)" >> $env:GITHUB_OUTPUT
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/locate-editor.ps1"'
 
     - name: Install web export templates (self-contained mode)
       shell: pwsh
       env:
         TEMPLATE_VERSION: ${{ steps.toolchain.outputs.template_version }}
-      run: |
-        $bundle = "${{ steps.locate.outputs.bundle_dir }}"
-        New-Item -ItemType File -Force -Path (Join-Path $bundle "._sc_") | Out-Null
-        $tplDir = Join-Path $bundle "editor_data/export_templates/${env:TEMPLATE_VERSION}"
-        New-Item -ItemType Directory -Force -Path $tplDir | Out-Null
-        $templates = Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -Include "web_release.zip","web_debug.zip"
-        if (-not $templates) {
-          Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -File | Select-Object -ExpandProperty FullName
-          throw "No web_release.zip / web_debug.zip found in the fork bundle."
-        }
-        $templates | ForEach-Object { Copy-Item $_.FullName -Destination $tplDir -Force; Write-Host "Installed template: $($_.Name)" }
-        Write-Host "Templates in ${tplDir}:"; Get-ChildItem $tplDir
+        BUNDLE_DIR: ${{ steps.locate.outputs.bundle_dir }}
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/install-templates.ps1"'
 
     - name: Register bundled NuGet source (if present)
       shell: pwsh
-      run: |
-        $nuget = Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -Directory -Filter "nuget" | Select-Object -First 1
-        if ($nuget) {
-          Write-Host "Adding local NuGet source: $($nuget.FullName)"
-          dotnet nuget add source "$($nuget.FullName)" --name godot-web-fork
-        } else {
-          Write-Host "No bundled nuget folder found; relying on nuget.org."
-        }
-
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/register-nuget-source.ps1"'
     # Build-stamp variables are set as ENVIRONMENT variables on the build and export steps
     # rather than passed with -p:. The export step re-enters MSBuild through the Godot editor,
     # whose command line we do not control; MSBuild reads environment variables as properties,
@@ -356,27 +175,21 @@ runs:
     - name: Import resources (headless)
       shell: pwsh
       continue-on-error: true
-      run: |
-        & "${{ steps.locate.outputs.godot_exe }}" --headless --path . --import 2>&1 | Tee-Object -FilePath import.log
+      env:
+        GODOT_EXE: ${{ steps.locate.outputs.godot_exe }}
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/import-project.ps1"'
 
     - name: Export Web (headless CLI)
       shell: pwsh
       env:
+        GODOT_EXE: ${{ steps.locate.outputs.godot_exe }}
         BuildCommit: ${{ steps.stamp.outputs.commit }}
         BuildBranch: ${{ steps.stamp.outputs.branch }}
         BuildRepository: ${{ steps.stamp.outputs.repository }}
         BuildRunId: ${{ steps.stamp.outputs.run_id }}
         BuildRunAttempt: ${{ steps.stamp.outputs.run_attempt }}
         BuildTimestampUtc: ${{ steps.stamp.outputs.timestamp }}
-      run: |
-        New-Item -ItemType Directory -Force -Path "build/web" | Out-Null
-        & "${{ steps.locate.outputs.godot_exe }}" --headless --path . --export-release "Web" "build/web/index.html" 2>&1 | Tee-Object -FilePath export.log
-        if (-not (Test-Path "build/web/index.html")) {
-          Write-Host "::error::Export did not produce build/web/index.html — see export.log"
-          exit 1
-        }
-        Write-Host "Export output:"; Get-ChildItem build/web
-
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/export-web.ps1"'
     # A sibling of index.html, so the served build can be identified with a plain curl without
     # booting a 96 MB WASM payload in a browser. The About screen reads its values from the
     # compiled-in stamp, not from this file — they come from the same inputs, so a mismatch
@@ -391,18 +204,7 @@ runs:
         BUILD_RUN_ATTEMPT: ${{ steps.stamp.outputs.run_attempt }}
         BUILD_TIMESTAMP: ${{ steps.stamp.outputs.timestamp }}
         FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
-      run: |
-        $info = [ordered]@{
-          commit      = $env:BUILD_COMMIT
-          branch      = $env:BUILD_BRANCH
-          repository  = $env:BUILD_REPOSITORY
-          runId       = $env:BUILD_RUN_ID
-          runAttempt  = $env:BUILD_RUN_ATTEMPT
-          builtUtc    = $env:BUILD_TIMESTAMP
-          godotEditor = $env:FORK_TAG
-        }
-        $info | ConvertTo-Json | Set-Content -Path "build/web/build-info.json" -Encoding utf8
-        Write-Host "build-info.json:"; Get-Content "build/web/build-info.json"
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/write-build-info.ps1"'
 
     - name: Upload web export artifact
       if: always()
