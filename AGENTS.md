@@ -111,6 +111,7 @@ In Godot 2D rendering:
 - Session state/behaviour (Godot-free): `scripts/session/`
 - UI code: `scripts/ui/`
 - Web test bridge: `scripts/testing/`
+- Build identity (About screen): `scripts/build/`
 
 ## Adding New Features
 
@@ -126,7 +127,7 @@ Four layers, each with a different cost. **Push tests down** — see
 
 | Layer | Command | Needs |
 |---|---|---|
-| Unit + integration (561 tests, ~1s) | `cd tests && dotnet test` | .NET only |
+| Unit + integration (584 tests, ~1s) | `cd tests && dotnet test` | .NET only |
 | Scene / UI (in-engine) | `dotnet build -p:IncludeSceneTests=true` then `godot --headless --path . res://tests/scene/scene_tests.tscn` | Godot binary |
 | Functional (browser) | `cd tests/visual && npx playwright test --project=functional` | deployed build |
 | Visual | `cd tests/visual && npx playwright test --project=maze` | deployed build |
@@ -198,6 +199,14 @@ desktop CI proves nothing about the browser build.
 **Version locking:** the patched editor tag and export templates live in
 `.github/web-toolchain.env`, and `Godot.NET.Sdk` in the `.csproj` must match them at
 patch level. CI fails fast on drift. Never hardcode these versions into workflow files.
+
+**Build identity:** every CI build is stamped with the commit it came from, surfaced on the
+**About** screen, in `build-info.json` beside `index.html`, and in the test bridge state. The
+values come from MSBuild properties CI passes as *environment variables* (the export re-enters
+MSBuild through the Godot editor, so a `-p:` argument would not reach it) and are compiled into
+the assembly by the `GenerateBuildStamp` target — a data file would not survive the export's
+`all_resources` filter. Unstamped local builds say so rather than showing a stale hash. See
+[docs/BUILD_VERIFICATION.md](./docs/BUILD_VERIFICATION.md).
 
 ## Running the Game
 

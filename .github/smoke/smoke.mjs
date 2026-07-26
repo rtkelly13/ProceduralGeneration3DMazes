@@ -59,6 +59,37 @@ try {
     throw new Error("Fatal runtime error(s):\n" + fatalErrors.join("\n"));
   }
 
+  // Confirm the deploy is serving the build this run produced, not a stale or partially
+  // replaced one. Vercel promotes an alias after upload, so "deploy succeeded" and "the new
+  // build is what visitors get" are two different claims — this checks the second.
+  //
+  // Asserted, not merely reported: unlike the bridge probe below, a wrong build being served
+  // is a real user-facing defect, and it is exactly what a deploy check exists to catch.
+  const expectedCommit = process.env.EXPECT_COMMIT || "";
+  console.log("→ Checking served build identity (build-info.json)");
+  const infoUrl = url.replace(/\/+$/, "") + "/build-info.json";
+  const infoResp = await page.request.get(infoUrl);
+  if (!infoResp.ok()) {
+    // Predates this file, or the export step changed — worth flagging but not worth failing a
+    // deploy over, since nothing user-facing depends on it.
+    console.log(`⚠️  build-info.json not served (HTTP ${infoResp.status()}) — cannot verify build identity.`);
+  } else {
+    const info = await infoResp.json();
+    console.log("  build-info.json:", JSON.stringify(info));
+    if (!expectedCommit) {
+      console.log("  EXPECT_COMMIT not set — reporting the served commit without asserting it.");
+    } else if (info.commit !== expectedCommit) {
+      throw new Error(
+        `Served build is not the one just built.\n` +
+          `  expected commit: ${expectedCommit}\n` +
+          `  served commit:   ${info.commit || "(empty)"}\n` +
+          `The deploy may not have promoted, or an older artefact is still being served.`,
+      );
+    } else {
+      console.log(`✅ Served build matches commit ${expectedCommit}`);
+    }
+  }
+
   // Report whether the in-app test bridge came up under this (patched-template) build.
   // Reported, not asserted: the bridge is an automation aid, and a build without it is still
   // a working build — failing the smoke test over it would block deploys for no user-visible
@@ -80,6 +111,22 @@ try {
       const state = await probe.evaluate(() => window.__mazeState ?? null);
       console.log("✅ TEST BRIDGE PRESENT — set MAZE_TEST_BRIDGE=1 to enable the browser suites");
       console.log("   window.__mazeState:", String(state).slice(0, 300));
+
+      // Cross-check the commit compiled INTO the WASM against the one in the sidecar JSON.
+      // They come from the same inputs, so a disagreement means the two halves of the deploy
+      // are from different builds — which a check of either one alone would miss.
+      try {
+        const inApp = JSON.parse(state || "{}").buildCommit || "";
+        if (expectedCommit && inApp && inApp !== expectedCommit) {
+          throw new Error(
+            `The running WASM reports commit ${inApp}, but this run built ${expectedCommit}.`,
+          );
+        }
+        console.log(`   in-app buildCommit: ${inApp || "(unstamped)"}`);
+      } catch (e) {
+        if (e instanceof SyntaxError) console.log("   (could not parse __mazeState)");
+        else throw e;
+      }
       if (process.env.GITHUB_STEP_SUMMARY) {
         await import("node:fs").then((fs) =>
           fs.appendFileSync(

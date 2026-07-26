@@ -25,6 +25,30 @@ inputs:
     description: "Token for downloading the fork release via gh"
     required: true
 
+  # Build stamp. Compiled into the binary so the About screen and the test bridge can report
+  # which commit produced the running build. Blank is legitimate — it produces a build that
+  # honestly reports itself as untraceable rather than one carrying a misleading hash.
+  build_commit:
+    description: "Full commit SHA this build is made from (blank = unstamped)"
+    required: false
+    default: ""
+  build_branch:
+    description: "Branch or tag name, without any refs/heads/ prefix"
+    required: false
+    default: ""
+  build_repository:
+    description: "owner/repo, used to build commit and run links"
+    required: false
+    default: ""
+  build_run_id:
+    description: "GitHub Actions run id that produced this build"
+    required: false
+    default: ""
+  build_run_attempt:
+    description: "Run attempt — a re-run of the same commit is a different artefact"
+    required: false
+    default: ""
+
 outputs:
   web_dir:
     description: "Path to the exported web output"
@@ -77,6 +101,17 @@ runs:
         "fork_tag=$forkTag"                 >> $env:GITHUB_OUTPUT
         "template_version=$template"        >> $env:GITHUB_OUTPUT
         "asset=Godot_v${forkTag}_mono_web_export_win64.zip" >> $env:GITHUB_OUTPUT
+
+    - name: Stamp build time
+      id: stamp
+      shell: pwsh
+      run: |
+        # Generated here rather than passed in, so it records when the artefact was actually
+        # produced. ISO-8601 UTC, and deliberately the same string the About screen displays
+        # and build-info.json carries — the three are meant to be compared literally.
+        $ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        "timestamp=$ts" >> $env:GITHUB_OUTPUT
+        Write-Host "Build timestamp: $ts"
 
     - name: Guard against version drift
       shell: pwsh
@@ -235,8 +270,20 @@ runs:
           Write-Host "No bundled nuget folder found; relying on nuget.org."
         }
 
+    # Build-stamp variables are set as ENVIRONMENT variables on the build and export steps
+    # rather than passed with -p:. The export step re-enters MSBuild through the Godot editor,
+    # whose command line we do not control; MSBuild reads environment variables as properties,
+    # so this is the one channel that reaches both. Consumed by the GenerateBuildStamp target
+    # in ProceduralGeneration3DMazes.csproj. See docs/BUILD_VERIFICATION.md.
     - name: Restore / build (net9.0)
       shell: pwsh
+      env:
+        BuildCommit: ${{ inputs.build_commit }}
+        BuildBranch: ${{ inputs.build_branch }}
+        BuildRepository: ${{ inputs.build_repository }}
+        BuildRunId: ${{ inputs.build_run_id }}
+        BuildRunAttempt: ${{ inputs.build_run_attempt }}
+        BuildTimestampUtc: ${{ steps.stamp.outputs.timestamp }}
       run: dotnet build ProceduralGeneration3DMazes.csproj -c ExportRelease /p:GodotTargetPlatform=web
 
     - name: Import resources (headless)
@@ -247,6 +294,13 @@ runs:
 
     - name: Export Web (headless CLI)
       shell: pwsh
+      env:
+        BuildCommit: ${{ inputs.build_commit }}
+        BuildBranch: ${{ inputs.build_branch }}
+        BuildRepository: ${{ inputs.build_repository }}
+        BuildRunId: ${{ inputs.build_run_id }}
+        BuildRunAttempt: ${{ inputs.build_run_attempt }}
+        BuildTimestampUtc: ${{ steps.stamp.outputs.timestamp }}
       run: |
         New-Item -ItemType Directory -Force -Path "build/web" | Out-Null
         & "${{ steps.locate.outputs.godot_exe }}" --headless --path . --export-release "Web" "build/web/index.html" 2>&1 | Tee-Object -FilePath export.log
@@ -255,6 +309,33 @@ runs:
           exit 1
         }
         Write-Host "Export output:"; Get-ChildItem build/web
+
+    # A sibling of index.html, so the served build can be identified with a plain curl without
+    # booting a 96 MB WASM payload in a browser. The About screen reads its values from the
+    # compiled-in stamp, not from this file — they come from the same inputs, so a mismatch
+    # between the two would itself be a signal that something repackaged the deploy.
+    - name: Write build-info.json
+      shell: pwsh
+      env:
+        BUILD_COMMIT: ${{ inputs.build_commit }}
+        BUILD_BRANCH: ${{ inputs.build_branch }}
+        BUILD_REPOSITORY: ${{ inputs.build_repository }}
+        BUILD_RUN_ID: ${{ inputs.build_run_id }}
+        BUILD_RUN_ATTEMPT: ${{ inputs.build_run_attempt }}
+        BUILD_TIMESTAMP: ${{ steps.stamp.outputs.timestamp }}
+        FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
+      run: |
+        $info = [ordered]@{
+          commit      = $env:BUILD_COMMIT
+          branch      = $env:BUILD_BRANCH
+          repository  = $env:BUILD_REPOSITORY
+          runId       = $env:BUILD_RUN_ID
+          runAttempt  = $env:BUILD_RUN_ATTEMPT
+          builtUtc    = $env:BUILD_TIMESTAMP
+          godotEditor = $env:FORK_TAG
+        }
+        $info | ConvertTo-Json | Set-Content -Path "build/web/build-info.json" -Encoding utf8
+        Write-Host "build-info.json:"; Get-Content "build/web/build-info.json"
 
     - name: Upload web export artifact
       if: always()

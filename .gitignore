@@ -6,8 +6,10 @@
 bin/
 obj/
 
-# Web export output
-build/
+# Web export output.
+# Anchored with a leading slash: an unanchored `build/` matches a directory of that name
+# at ANY depth, which silently excluded scripts/build/ (the build-stamp source) from git.
+/build/
 
 # Test coverage output
 tests/coverage/

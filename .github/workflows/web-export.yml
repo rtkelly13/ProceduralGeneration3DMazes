@@ -73,6 +73,13 @@ jobs:
           godot_fork_tag: ${{ github.event.inputs.godot_fork_tag }}
           template_version: ${{ github.event.inputs.template_version }}
           github_token: ${{ github.token }}
+          # Stamps the artefact with the commit it came from, so the About screen and
+          # build-info.json identify exactly what is being served.
+          build_commit: ${{ github.sha }}
+          build_branch: ${{ github.ref_name }}
+          build_repository: ${{ github.repository }}
+          build_run_id: ${{ github.run_id }}
+          build_run_attempt: ${{ github.run_attempt }}
 
       - name: Deploy to Vercel
         id: deploy
@@ -115,6 +122,9 @@ jobs:
       - name: Smoke test the deployed build
         env:
           SMOKE_URL: ${{ needs.production.outputs.url }}
+          # Asserts the alias actually serves the artefact this run built, rather than a
+          # previous one that a failed promotion left in place.
+          EXPECT_COMMIT: ${{ github.sha }}
         run: node .github/smoke/smoke.mjs
 
 
@@ -199,6 +209,10 @@ jobs:
         run: |
           $sha = gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefOid -q ".headRefOid"
           "sha=$sha" >> $env:GITHUB_OUTPUT
+          # Needed for the build stamp: a preview builds the PR head, so github.sha (the
+          # default branch, for an issue_comment event) would stamp the wrong commit entirely.
+          $ref = gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName -q ".headRefName"
+          "ref=$ref" >> $env:GITHUB_OUTPUT
 
       - name: Checkout PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -209,6 +223,12 @@ jobs:
         uses: ./.github/actions/export-web
         with:
           github_token: ${{ github.token }}
+          # The PR head, not github.sha — see the note in the step above.
+          build_commit: ${{ steps.pr.outputs.sha }}
+          build_branch: ${{ steps.pr.outputs.ref }}
+          build_repository: ${{ github.repository }}
+          build_run_id: ${{ github.run_id }}
+          build_run_attempt: ${{ github.run_attempt }}
 
       - name: Deploy to Vercel (preview)
         id: deploy

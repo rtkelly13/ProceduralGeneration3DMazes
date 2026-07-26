@@ -54,6 +54,10 @@ Normal visitors never receive the API surface.
   "junctions": 9,
   "start": { "x": 0, "y": 0, "z": 0 },
   "end":   { "x": 9, "y": 9, "z": 0 },
+  "buildCommit": "12f29bd…",       // which build this is — see BUILD_VERIFICATION.md
+  "buildBranch": "main",
+  "buildTime": "2026-07-26T09:15:03Z",
+  "buildRunId": "30194540175",
   "lastCommand": "{\"cmd\":\"generate\"}",
   "lastError": ""                 // non-empty when a command failed
 }
@@ -61,6 +65,10 @@ Normal visitors never receive the API surface.
 
 `seed`, `shortestPath`, `totalCells`, `deadEnds`, `junctions`, `start` and `end` appear only
 once a maze exists (`hasMaze: true`).
+
+The `build*` fields are always present — they do not depend on any app state, and a check that
+wants to know *which build it is talking to* needs them before the app has done anything. They
+are empty on an unstamped local build. See [BUILD_VERIFICATION.md](./BUILD_VERIFICATION.md).
 
 ### Commands
 
@@ -70,7 +78,7 @@ once a maze exists (`hasMaze: true`).
 | `setLevel` | `level` | Changes the displayed Z level (clamped to the maze). |
 | `showPath` | `value` | Toggles solution-path display. |
 | `nextPath` / `previousPath` | — | Cycles alternative paths. |
-| `goto` | `scene`: `maze`\|`menu`\|`comparison`\|`loader` | Changes screen. |
+| `goto` | `scene`: `maze`\|`menu`\|`comparison`\|`loader`\|`about` | Changes screen. |
 
 `algorithm` accepts `backtracker` (or `recursivebacktracker`), `growingtree`, `binarytree`,
 `prims` — case-insensitive.

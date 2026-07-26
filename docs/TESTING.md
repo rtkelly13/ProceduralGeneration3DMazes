@@ -16,7 +16,7 @@ layer needs a Windows-built web export and a Vercel deploy. Only test in the bro
 
 ## Unit tests — `dotnet test tests/`
 
-561 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
+584 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
 fast and portable. Any code needing `using Godot;` cannot live here — that is the boundary, and
 it is why the scene layer exists.
 
@@ -137,7 +137,9 @@ nearest thing to coverage was a test that read `menu.tscn` as **text** and asser
 contained the string `"ComparisonButton"` — proving a node name appears in a file, not that it
 is a `Button` or that the scene even instantiates. The scene runner checks the real thing.
 
-Current checks: every scene instantiates, `ComparisonButton` is genuinely a `Button`, the
+Current checks: every scene instantiates, `ComparisonButton` and `AboutButton` are genuinely
+`Button`s, the About screen wires up and reports the running build's identity (see
+[BUILD_VERIFICATION.md](./BUILD_VERIFICATION.md)), the
 `GameState` autoload initialises its `ServiceContainer`, the test bridge is inert off the web
 platform, seeded generation is deterministic *through the autoload path the app actually
 uses*, and `SetLevel` clamps to maze bounds.

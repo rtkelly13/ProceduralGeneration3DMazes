@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Text;
 using Godot;
+using ProceduralMaze.Build;
 using ProceduralMaze.Autoload;
 using ProceduralMaze.Maze;
 using ProceduralMaze.Maze.Agents;
@@ -310,6 +311,17 @@ namespace ProceduralMaze.Testing
             TestBridgeProtocol.AppendString(sb, "scene", GetTree()?.CurrentScene?.SceneFilePath ?? "");
             sb.Append(',');
             TestBridgeProtocol.AppendBool(sb, "hasMaze", maze is not null);
+            sb.Append(',');
+            // Build identity, so an automated check can confirm WHICH build it is talking to.
+            // Published unconditionally: unlike the maze fields it does not depend on any state
+            // existing, and a smoke test needs it before the app has done anything.
+            TestBridgeProtocol.AppendString(sb, "buildCommit", CurrentBuild.Info.Commit);
+            sb.Append(',');
+            TestBridgeProtocol.AppendString(sb, "buildBranch", CurrentBuild.Info.Branch);
+            sb.Append(',');
+            TestBridgeProtocol.AppendString(sb, "buildTime", CurrentBuild.Info.TimestampUtc);
+            sb.Append(',');
+            TestBridgeProtocol.AppendString(sb, "buildRunId", CurrentBuild.Info.RunId);
 
             if (state is not null)
             {
