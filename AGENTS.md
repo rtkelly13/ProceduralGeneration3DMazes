@@ -193,8 +193,17 @@ desktop build and the whole test suite stay green:**
 
 Prefer `CultureInfo.InvariantCulture` explicitly, and keep `scripts/maze/` free of
 platform-specific BCL calls. If you add anything in the table above, **test it on web
-explicitly**: comment `/preview` on the PR and check the smoke test result — a green
-desktop CI proves nothing about the browser build.
+explicitly** — a green desktop CI proves nothing about the browser build.
+
+**To deploy and check a branch on the web, dispatch `web-export.yml` on that ref**
+(`deploy_target` defaults to `preview`); an agent can do this through the GitHub API with no
+comment and no owner privileges. Prefer it over commenting `/preview`, which is an
+`issue_comment` trigger and therefore always runs the workflow and smoke script from the
+**default branch** — so it cannot exercise a branch's own changes to either. Read the outcome
+from the run's step summaries (deploy URL, served commit, bridge verdict). If the deploy host is
+unreachable from the agent's sandbox, that is expected — the checks run in CI for exactly that
+reason; do not try to route around the network policy. See
+[docs/BUILD_VERIFICATION.md](./docs/BUILD_VERIFICATION.md).
 
 **Version locking:** the patched editor tag and export templates live in
 `.github/web-toolchain.env`, and `Godot.NET.Sdk` in the `.csproj` must match them at

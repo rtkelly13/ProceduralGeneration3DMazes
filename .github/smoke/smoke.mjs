@@ -124,6 +124,25 @@ try {
     }
   }
 
+  // Put the identity in the step summary too. A caller inspecting this run (an agent via the
+  // GitHub API) can then read one short summary instead of pulling the whole job log.
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    const rows = info
+      ? [
+          `| Served commit | \`${info.commit || "(unstamped)"}\` |`,
+          `| Built (UTC) | ${info.builtUtc || "—"} |`,
+          `| Branch | ${info.branch || "—"} |`,
+          `| Editor | ${info.godotEditor || "—"} |`,
+        ].join("\n")
+      : "| Served commit | _build-info.json unavailable_ |";
+    await import("node:fs").then((fs) =>
+      fs.appendFileSync(
+        process.env.GITHUB_STEP_SUMMARY,
+        `### Served build\n\n| | |\n|---|---|\n${rows}\n| Expected | \`${expectedCommit || "(not asserted)"}\` |\n`,
+      ),
+    );
+  }
+
   // Report whether the in-app test bridge came up under this (patched-template) build.
   // Reported, not asserted: the bridge is an automation aid, and a build without it is still
   // a working build — failing the smoke test over it would block deploys for no user-visible

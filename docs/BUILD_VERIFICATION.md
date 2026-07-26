@@ -36,6 +36,50 @@ $ curl -s https://maze.ryankelly.dev/build-info.json
 Compare `commit` against the repository. `runId` links to the exact job:
 `https://github.com/<repository>/actions/runs/<runId>`.
 
+## Issuing a preview deploy without commenting `/preview`
+
+`/preview` is an `issue_comment` trigger gated on `author_association == 'OWNER'`, so an
+automated caller — an agent with GitHub API access but no ability to comment as the owner —
+cannot use it. **Use `workflow_dispatch` instead.** It is not a workaround; for verifying a
+branch it is strictly better:
+
+| | `/preview` comment | `workflow_dispatch` |
+|---|---|---|
+| Needs an OWNER comment | yes | no |
+| Workflow file used | **always the default branch** | **the ref you dispatch** |
+| `.github/smoke/` used | default branch | the ref you dispatch |
+| Deploy target | preview | `preview` (default), `production` only on `main` |
+
+That second row is the one that matters. An `issue_comment` run cannot exercise a branch's own
+changes to this workflow or to the smoke script — which is exactly how a build stamp added on a
+branch arrived empty and a broken boot check went unnoticed.
+
+```jsonc
+// POST /repos/{owner}/{repo}/actions/workflows/web-export.yml/dispatches
+{ "ref": "my-branch" }            // deploy_target defaults to "preview"
+```
+
+Then read the result from the run, cheapest call first:
+
+1. **Step summaries** — the deploy step writes a `### preview deploy` table with the URL,
+   commit, and a link to `build-info.json`; the smoke step writes a `### Served build` table and
+   the bridge verdict. One short call, no log parsing.
+2. **Job log markers** — `DEPLOY_URL=…` and `DEPLOY_TARGET=…` are printed on their own lines so
+   a caller does not have to parse vercel's own output.
+
+**Production is opt-in and `main`-only.** It used to be inferred — `refs/heads/main` meant
+`--prod` — which put a dispatch on the wrong branch one step away from silently publishing to
+`maze.ryankelly.dev`. The target is now stated explicitly, and `deploy_target=production` on any
+other ref fails the job with a message rather than doing something surprising.
+
+### If the deploy host is unreachable from where the agent runs
+
+A sandboxed agent may be unable to reach `*.vercel.app` at all — this project's own environment
+denies it at the proxy (`403` on `CONNECT`). **Do not try to route around that.** Dispatch the
+workflow and read the verdict from the run instead: the smoke job runs inside CI, where the
+deploy *is* reachable, and reports the served commit and the bridge state into the step summary.
+That is the whole reason those checks are asserted in CI rather than left to a human to eyeball.
+
 ## The About screen
 
 Menu → **About**, or `?test=1` and `window.__mazeCommand('{"cmd":"goto","scene":"about"}')`.

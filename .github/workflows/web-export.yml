@@ -3,8 +3,17 @@ name: Web Export & Deploy
 # Builds the experimental C#/.NET WebAssembly export (Windows runner), deploys it to
 # the `maze` Vercel project, then smoke-tests that the deployed build actually boots.
 #
-#   * push to main / manual dispatch → PRODUCTION deploy (aliases maze.ryankelly.dev)
+#   * push to main                    → PRODUCTION deploy (aliases maze.ryankelly.dev)
 #   * comment "/preview" on a PR      → on-demand PREVIEW deploy (unique URL, posted back)
+#   * workflow_dispatch               → PREVIEW by default; production requires
+#                                       deploy_target=production AND ref main
+#
+# workflow_dispatch is the path an automated caller (an agent with GitHub API access, with no
+# ability to comment as an OWNER) should use: it needs no comment, and unlike issue_comment it
+# runs the workflow file AND the checkout from the ref you dispatch, so a branch's own changes
+# to this workflow and to .github/smoke/ are actually exercised. An issue_comment run always
+# takes the workflow from the default branch, which is how a build stamp added on a branch
+# silently arrived empty (see docs/BUILD_VERIFICATION.md).
 #
 # The fast test gate lives in test.yml and runs on every PR. The expensive Windows
 # export here only runs on merge to main or an explicit /preview, to keep runner
@@ -27,11 +36,17 @@ on:
       - ".github/editor-checksums.txt"
       - ".github/web-toolchain.env"
   workflow_dispatch:
-    # Both blank by default: the versions come from .github/web-toolchain.env so that
-    # dispatch, push-to-main and /preview always agree. Fill one in only to test an
-    # unpinned editor build ad hoc — note the checksum guard still requires an entry
-    # in .github/editor-checksums.txt for whatever tag you name.
+    # Both version inputs are blank by default: the versions come from
+    # .github/web-toolchain.env so that dispatch, push-to-main and /preview always agree.
+    # Fill one in only to test an unpinned editor build ad hoc — note the checksum guard
+    # still requires an entry in .github/editor-checksums.txt for whatever tag you name.
     inputs:
+      deploy_target:
+        description: "preview (default, throwaway URL) or production (main only, aliases maze.ryankelly.dev)"
+        required: false
+        default: "preview"
+        type: choice
+        options: ["preview", "production"]
       godot_fork_tag:
         description: "Override patched-editor release tag (blank = .github/web-toolchain.env)"
         required: false
@@ -87,20 +102,51 @@ jobs:
         id: deploy
         if: env.VERCEL_TOKEN != ''
         shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+          IN_TARGET: ${{ github.event.inputs.deploy_target }}
+          BUILD_COMMIT: ${{ steps.export.outputs.build_commit }}
         run: |
           Copy-Item infra/vercel/vercel.json build/web/vercel.json -Force
           npm i -g vercel@latest
-          # Only a run on main ships to production (aliases maze.ryankelly.dev).
-          # Any other ref (e.g. a manual dispatch on a feature branch to test the
-          # pipeline) deploys a throwaway preview instead of touching prod.
-          if ("${{ github.ref }}" -eq "refs/heads/main") {
+
+          # Target is STATED, not inferred from the ref. It used to be "main means --prod",
+          # which made a dispatch the wrong branch away from silently publishing to
+          # maze.ryankelly.dev -- an unacceptable footgun now that agents dispatch this
+          # workflow to get preview URLs (see docs/BUILD_VERIFICATION.md).
+          $target = if ($env:EVENT_NAME -eq 'push') { 'production' }
+                    elseif ([string]::IsNullOrWhiteSpace($env:IN_TARGET)) { 'preview' }
+                    else { $env:IN_TARGET }
+
+          if ($target -eq 'production' -and $env:GIT_REF -ne 'refs/heads/main') {
+            throw "deploy_target=production is only allowed on refs/heads/main (got $env:GIT_REF). Use 'preview'."
+          }
+
+          if ($target -eq 'production') {
             $url = (vercel deploy build/web --prod --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-            Write-Host "Production: $url"
           } else {
             $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-            Write-Host "Preview (non-main run): $url"
           }
+
           "url=$url" >> $env:GITHUB_OUTPUT
+          "target=$target" >> $env:GITHUB_OUTPUT
+
+          # A single machine-readable line so a caller reading the job log (an agent via the
+          # GitHub API, for instance) does not have to parse vercel's own chatter.
+          Write-Host "DEPLOY_URL=$url"
+          Write-Host "DEPLOY_TARGET=$target"
+
+          # Also in the step summary, which is one short API call rather than a whole log.
+          @(
+            "### $target deploy",
+            "",
+            "| | |",
+            "|---|---|",
+            "| URL | <$url> |",
+            "| Commit | ``$env:BUILD_COMMIT`` |",
+            "| Build info | <$url/build-info.json> |"
+          ) -join "`n" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       - name: Skip notice (no secrets)
         if: env.VERCEL_TOKEN == ''
