@@ -49,7 +49,8 @@ var result = services.MazeGenerationFactory.GenerateMaze(settings);
 
 | Class | Purpose |
 |-------|---------|
-| `GameState` | Godot autoload singleton, holds settings and current maze |
+| `MazeSession` | **Godot-free** session state and operations — where behaviour belongs |
+| `GameState` | Thin Godot autoload adapter forwarding to `MazeSession` |
 | `ServiceContainer` | Manual DI container, instantiates all services |
 | `MazeGenerationFactory` | Main entry point for maze generation |
 | `MazeJumper` | Navigate through a generated maze |
@@ -107,7 +108,9 @@ In Godot 2D rendering:
 - Benchmarks: `benchmarks/ProceduralMaze.Benchmarks.csproj`
 - Godot scenes: `scenes/*.tscn`
 - Maze logic: `scripts/maze/`
+- Session state/behaviour (Godot-free): `scripts/session/`
 - UI code: `scripts/ui/`
+- Web test bridge: `scripts/testing/`
 
 ## Adding New Features
 
@@ -115,6 +118,27 @@ In Godot 2D rendering:
 2. Wire up in `ServiceContainer.cs` if new service
 3. Add tests in `tests/`
 4. Add UI in `scripts/ui/` and `scenes/`
+
+## Testing
+
+Four layers, each with a different cost. **Push tests down** — see
+[docs/TESTING.md](./docs/TESTING.md) for which to use.
+
+| Layer | Command | Needs |
+|---|---|---|
+| Unit + integration (551 tests, ~10s) | `cd tests && dotnet test` | .NET only |
+| Scene / UI (in-engine) | `dotnet build -p:IncludeSceneTests=true` then `godot --headless --path . res://tests/scene/scene_tests.tscn` | Godot binary |
+| Functional (browser) | `cd tests/visual && npx playwright test --project=functional` | deployed build |
+| Visual | `cd tests/visual && npx playwright test --project=maze` | deployed build |
+
+**Keep behaviour out of Godot types.** New logic belongs in a plain C# class that the unit
+suite compiles (`scripts/session/`, `scripts/maze/`); Godot `Node` subclasses should be thin
+adapters that forward to it — `GameState` → `MazeSession` is the pattern. Adding a file to the
+test project's `<Compile Include>` list is a claim that it is Godot-free, and the build
+enforces that claim. Only genuinely engine-bound code (drawing, input, node wiring, scene
+lifecycle) should need scene tests. Browser tests need the in-app test bridge
+([docs/TEST_BRIDGE.md](./docs/TEST_BRIDGE.md)) because a Godot web export is a single
+`<canvas>` with no DOM for Playwright to query.
 
 ## Randomness & Determinism (read before touching generation)
 
@@ -238,15 +262,6 @@ cd benchmarks && dotnet run -c Release -- --filter "*ShortestPath*" -j short 2>&
 - `GrowingTreeAlgorithmLinkedList` - Uses `ElementAt()` which is O(n) on LinkedList
 - `DirectionsFlagParser.SplitDirectionsFromFlag` - Called frequently, allocates arrays
 - Maze generation algorithms - Main user-facing performance
-
-
-## 🛑 Repository Conventions & Workflow Policy
-
-1. **Squash Merge Only**: All pull requests must be merged into `main` using **Squash and Merge** exclusively.
-2. **Delete Branch on Merge**: Feature branches must be automatically deleted immediately upon merge into `main`.
-3. **Linear History**: Maintain a strictly linear history. Rebase feature branches onto `main` before merging; no merge commits allowed.
-4. **Direct Push Protection**: Non-force direct pushes to `main` are blocked; PR mechanism required (force pushes permitted when needed).
-
 
 ## 🛑 Repository Conventions & Workflow Policy
 

@@ -34,6 +34,78 @@ jobs:
       - name: Test
         run: dotnet test tests/ProceduralMaze.Tests.csproj -c Debug --nologo
 
+  # In-engine tests for the Godot scene/UI layer, which the NUnit suite cannot reach (it
+  # deliberately builds without the Godot SDK). Runs the official upstream Linux editor
+  # headless -- the patched Windows fork is only needed for the *web export*, not for this.
+  #
+  # Not gdUnit4Net: its Godot-runtime executor fails to start on Godot 4.7.1
+  # ("Failed to connect: Connection timeout"), while plain Godot runs the project fine.
+  # See docs/TESTING.md -> "Why not gdUnit4Net".
+  scene-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GODOT_VERSION: "4.7.1-stable"
+      GODOT_ASSET: "Godot_v4.7.1-stable_mono_linux_x86_64"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Cache Godot editor
+        id: godotcache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/godot
+          key: godot-linux-${{ env.GODOT_VERSION }}
+
+      - name: Download Godot (checksum-pinned)
+        if: steps.godotcache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot"
+          curl -sSL -o "$RUNNER_TEMP/godot/$GODOT_ASSET.zip" \
+            "https://github.com/godotengine/godot-builds/releases/download/$GODOT_VERSION/$GODOT_ASSET.zip"
+
+      - name: Verify Godot checksum
+        run: |
+          # Same supply-chain guard as the patched web editor: never run an unverified binary.
+          expected=$(grep -v '^\s*#' .github/editor-checksums.txt | grep "$GODOT_ASSET.zip" | awk '{print $1}')
+          if [ -z "$expected" ]; then
+            echo "::error::No pinned checksum for $GODOT_ASSET.zip in .github/editor-checksums.txt"
+            exit 1
+          fi
+          actual=$(sha256sum "$RUNNER_TEMP/godot/$GODOT_ASSET.zip" | awk '{print $1}')
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::Checksum mismatch for $GODOT_ASSET.zip (expected $expected, got $actual)"
+            exit 1
+          fi
+          echo "Checksum OK: $actual"
+
+      - name: Extract Godot
+        run: |
+          unzip -q -o "$RUNNER_TEMP/godot/$GODOT_ASSET.zip" -d "$RUNNER_TEMP/godot"
+          find "$RUNNER_TEMP/godot" -type f -name "Godot_v*_mono_linux.x86_64" -exec chmod +x {} \;
+
+      - name: Build with scene tests
+        run: dotnet build ProceduralGeneration3DMazes.csproj -c Debug --nologo -p:IncludeSceneTests=true
+
+      - name: Import project (headless)
+        run: |
+          GODOT=$(find "$RUNNER_TEMP/godot" -type f -name "Godot_v*_mono_linux.x86_64" | head -1)
+          # First open builds the resource cache; a cold project cannot run a scene.
+          "$GODOT" --headless --path . --import
+        continue-on-error: true
+
+      - name: Run scene tests (headless)
+        run: |
+          GODOT=$(find "$RUNNER_TEMP/godot" -type f -name "Godot_v*_mono_linux.x86_64" | head -1)
+          # The runner exits non-zero when any check fails; verified locally.
+          "$GODOT" --headless --path . res://tests/scene/scene_tests.tscn
+
   # Keeps the visual-regression harness verified on every PR without needing a deployed
   # build. The maze suite itself can only run post-deploy (see web-export.yml), so without
   # this the harness would sit untested until someone needed it.

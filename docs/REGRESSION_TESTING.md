@@ -3,6 +3,9 @@
 **Status:** Foundation landed (seeding + determinism guards). Golden-file suite designed
 below, **not yet built**.
 
+> This document covers the *generation* regression story. For which testing layer to use for
+> what — unit, in-engine scene, browser functional, visual — see **[TESTING.md](./TESTING.md)**.
+
 ## Why the existing suite can't catch regressions
 
 The 421 tests before this work were all *invariant* tests: is the maze valid, is every cell

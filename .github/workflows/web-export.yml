@@ -121,10 +121,12 @@ jobs:
   # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
   # Screenshotting a build that didn't start just yields a blank baseline.
   #
-  # MAZE_SEEDING gates the maze suite: until the web build reads generation parameters from
-  # the query string, screenshots are nondeterministic, so the suite skips rather than
-  # reporting a false red. See docs/VISUAL_REGRESSION.md -> "Prerequisite: URL-parameter
-  # seeding", then set this to "1".
+  # MAZE_TEST_BRIDGE gates both browser suites. The in-app bridge
+  # (scripts/testing/TestBridge.cs) provides URL seeding and the state channel they need. It
+  # is unit- and scene-tested, but whether it survives the *patched* web export template is
+  # unproven until a deploy exists to check against -- so both suites skip rather than risk a
+  # false red. Flip to "1" after confirming window.__mazeTestApi === "1" on a deploy.
+  # See docs/TEST_BRIDGE.md -> "Enabling in CI".
   visual-production:
     needs: [production, smoke-production]
     if: needs.production.outputs.url != ''
@@ -144,11 +146,18 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
+      - name: Functional tests (via the in-app test bridge)
+        working-directory: tests/visual
+        env:
+          MAZE_URL: ${{ needs.production.outputs.url }}
+          MAZE_TEST_BRIDGE: "0"
+        run: npx playwright test --project=functional
+
       - name: Visual regression
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.production.outputs.url }}
-          MAZE_SEEDING: "0"
+          MAZE_TEST_BRIDGE: "0"
         run: npx playwright test --project=maze
 
       - name: Upload visual diff on failure
@@ -261,10 +270,12 @@ jobs:
   # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
   # Screenshotting a build that didn't start just yields a blank baseline.
   #
-  # MAZE_SEEDING gates the maze suite: until the web build reads generation parameters from
-  # the query string, screenshots are nondeterministic, so the suite skips rather than
-  # reporting a false red. See docs/VISUAL_REGRESSION.md -> "Prerequisite: URL-parameter
-  # seeding", then set this to "1".
+  # MAZE_TEST_BRIDGE gates both browser suites. The in-app bridge
+  # (scripts/testing/TestBridge.cs) provides URL seeding and the state channel they need. It
+  # is unit- and scene-tested, but whether it survives the *patched* web export template is
+  # unproven until a deploy exists to check against -- so both suites skip rather than risk a
+  # false red. Flip to "1" after confirming window.__mazeTestApi === "1" on a deploy.
+  # See docs/TEST_BRIDGE.md -> "Enabling in CI".
   visual-preview:
     needs: [preview, smoke-preview]
     if: needs.preview.outputs.url != ''
@@ -284,11 +295,18 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
+      - name: Functional tests (via the in-app test bridge)
+        working-directory: tests/visual
+        env:
+          MAZE_URL: ${{ needs.preview.outputs.url }}
+          MAZE_TEST_BRIDGE: "0"
+        run: npx playwright test --project=functional
+
       - name: Visual regression
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.preview.outputs.url }}
-          MAZE_SEEDING: "0"
+          MAZE_TEST_BRIDGE: "0"
         run: npx playwright test --project=maze
 
       - name: Upload visual diff on failure

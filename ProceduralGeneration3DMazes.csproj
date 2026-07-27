@@ -33,6 +33,15 @@
   </ItemGroup>
 
   <!--
+    In-engine scene tests, added back after the blanket removal above (order matters in
+    MSBuild). Opt-in via -p:IncludeSceneTests=true so the runner never ships in a game
+    export; CI passes it for the headless scene-test job. See docs/TESTING.md.
+  -->
+  <ItemGroup Condition=" '$(IncludeSceneTests)' == 'true' ">
+    <Compile Include="tests\scene\*.cs" />
+  </ItemGroup>
+
+  <!--
     Program.cs is the WASM entry point. It MUST NOT be compiled into the normal
     (library) build, otherwise top-level statements trigger CS8805
     ("Program using top-level statements must be an executable").
