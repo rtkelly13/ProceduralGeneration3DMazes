@@ -2,20 +2,26 @@ name: "Export Godot C# project to Web (WASM)"
 description: >
   Builds an experimental C#/.NET WebAssembly export using ComplexRobot's patched
   Windows editor build. Must run on a windows-latest runner. Produces build/web.
+  Step logic lives in ./scripts/*.ps1.
 
 inputs:
+  # These three intentionally default to EMPTY. When empty they are resolved from
+  # .github/web-toolchain.env — the single source of truth — so every caller
+  # (production, /preview, manual dispatch) uses identical versions unless a human
+  # deliberately overrides one. Do not reintroduce literal version defaults here or
+  # in workflow files: duplicated defaults are how production and preview drift apart.
   fork_repo:
-    description: "Repo hosting the patched editor release (override to point at a mirror or, eventually, official support)"
+    description: "Override the repo hosting the patched editor release (blank = value from .github/web-toolchain.env)"
     required: false
-    default: "ComplexRobot/godot-dotnet-web-export"
+    default: ""
   godot_fork_tag:
-    description: "Patched-editor release tag (editor + web templates)"
+    description: "Override the patched-editor release tag (blank = value from .github/web-toolchain.env)"
     required: false
-    default: "4.7-stable"
+    default: ""
   template_version:
-    description: "Export-template version folder name (must match the editor build)"
+    description: "Override the export-template folder name (blank = value from .github/web-toolchain.env)"
     required: false
-    default: "4.7.stable.mono"
+    default: ""
   github_token:
     description: "Token for downloading the fork release via gh"
     required: true
@@ -24,25 +30,32 @@ outputs:
   web_dir:
     description: "Path to the exported web output"
     value: "build/web"
+  fork_tag:
+    description: "The patched-editor tag actually used for this export"
+    value: ${{ steps.toolchain.outputs.fork_tag }}
+  template_version:
+    description: "The export-template version actually used for this export"
+    value: ${{ steps.toolchain.outputs.template_version }}
 
 runs:
   using: composite
   steps:
+    - name: Resolve toolchain versions
+      id: toolchain
+      shell: pwsh
+      env:
+        IN_FORK_REPO: ${{ inputs.fork_repo }}
+        IN_FORK_TAG: ${{ inputs.godot_fork_tag }}
+        IN_TEMPLATE_VERSION: ${{ inputs.template_version }}
+      run: '& "${{ github.action_path }}/scripts/resolve-toolchain.ps1"'
+
     - name: Guard against version drift
       shell: pwsh
       env:
-        TEMPLATE_VERSION: ${{ inputs.template_version }}
-      run: |
-        # The Godot.NET.Sdk version (csproj), the fork tag, and the export-template
-        # version must share a major.minor, or the export fails cryptically. Catch it early.
-        $csproj = Get-Content ProceduralGeneration3DMazes.csproj -Raw
-        if ($csproj -notmatch 'Godot\.NET\.Sdk/(\d+)\.(\d+)\.') { throw "Could not parse Godot.NET.Sdk version from csproj." }
-        $sdkMM = "$($Matches[1]).$($Matches[2])"
-        $tplMM = (($env:TEMPLATE_VERSION -split '\.')[0..1]) -join '.'
-        if ($sdkMM -ne $tplMM) {
-          throw "Version drift: Godot.NET.Sdk is $sdkMM but template_version is '$env:TEMPLATE_VERSION' ($tplMM). Align the csproj SDK version, the fork tag, and the template version — see docs/WEB_EXPORT.md."
-        }
-        Write-Host "Version check OK: Godot.NET.Sdk $sdkMM matches template $env:TEMPLATE_VERSION"
+        TEMPLATE_VERSION: ${{ steps.toolchain.outputs.template_version }}
+        FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
+        ASSET: ${{ steps.toolchain.outputs.asset }}
+      run: '& "${{ github.action_path }}/scripts/check-version-drift.ps1"'
 
     - name: Set up .NET 9 SDK
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -58,36 +71,23 @@ runs:
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/godot-zip
-        key: godot-editor-${{ inputs.godot_fork_tag }}
+        key: godot-editor-${{ steps.toolchain.outputs.fork_repo }}-${{ steps.toolchain.outputs.fork_tag }}
 
     - name: Download patched Godot editor (web-export fork)
       if: steps.editorcache.outputs.cache-hit != 'true'
       shell: pwsh
       env:
         GH_TOKEN: ${{ inputs.github_token }}
-        FORK_REPO: ${{ inputs.fork_repo }}
-        FORK_TAG: ${{ inputs.godot_fork_tag }}
-      run: |
-        $asset = "Godot_v${env:FORK_TAG}_mono_web_export_win64.zip"
-        New-Item -ItemType Directory -Force -Path "${env:RUNNER_TEMP}/godot-zip" | Out-Null
-        Write-Host "Downloading $asset from $env:FORK_REPO@$env:FORK_TAG"
-        gh release download "$env:FORK_TAG" --repo "$env:FORK_REPO" --pattern "$asset" --dir "${env:RUNNER_TEMP}/godot-zip"
+        FORK_REPO: ${{ steps.toolchain.outputs.fork_repo }}
+        FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
+        ASSET: ${{ steps.toolchain.outputs.asset }}
+      run: '& "${{ github.action_path }}/scripts/download-editor.ps1"'
 
     - name: Verify editor checksum (supply-chain guard)
       shell: pwsh
-      run: |
-        # Runs on both fresh downloads and cache hits — verifies the exact bytes we execute.
-        $zip = Get-ChildItem "${env:RUNNER_TEMP}/godot-zip" -Filter *.zip | Select-Object -First 1
-        if (-not $zip) { throw "Editor zip not found (cache or download failed)." }
-        $line = Get-Content .github/editor-checksums.txt |
-                Where-Object { $_ -notmatch '^\s*#' -and $_ -match [regex]::Escape($zip.Name) } | Select-Object -First 1
-        if (-not $line) { throw "No pinned checksum for '$($zip.Name)' in .github/editor-checksums.txt — refusing to run an unverified binary. See docs/WEB_EXPORT.md." }
-        $expected = (($line -split '\s+') | Where-Object { $_ })[0].ToLower()
-        $actual = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLower()
-        if ($actual -ne $expected) {
-          throw "Checksum MISMATCH for $($zip.Name).`n  expected: $expected`n  actual:   $actual`nThe fork release may have been re-published — verify and update .github/editor-checksums.txt."
-        }
-        Write-Host "Checksum OK for $($zip.Name): $actual"
+      env:
+        ASSET: ${{ steps.toolchain.outputs.asset }}
+      run: '& "${{ github.action_path }}/scripts/verify-editor-checksum.ps1"'
 
     - name: Extract editor
       shell: pwsh
@@ -98,46 +98,18 @@ runs:
     - name: Locate editor executable and bundle contents
       id: locate
       shell: pwsh
-      run: |
-        $root = "$env:RUNNER_TEMP/godot"
-        $exe = Get-ChildItem -Path $root -Recurse -Filter "*.exe" |
-               Where-Object { $_.Name -match "console" } | Select-Object -First 1
-        if (-not $exe) {
-          $exe = Get-ChildItem -Path $root -Recurse -Filter "*.exe" |
-                 Where-Object { $_.Name -notmatch "crash|handler" } | Select-Object -First 1
-        }
-        if (-not $exe) { throw "Could not find a Godot editor executable in the fork zip." }
-        Write-Host "Editor exe: $($exe.FullName)"
-        "godot_exe=$($exe.FullName)" >> $env:GITHUB_OUTPUT
-        "bundle_dir=$($exe.Directory.FullName)" >> $env:GITHUB_OUTPUT
+      run: '& "${{ github.action_path }}/scripts/locate-editor.ps1"'
 
     - name: Install web export templates (self-contained mode)
       shell: pwsh
       env:
-        TEMPLATE_VERSION: ${{ inputs.template_version }}
-      run: |
-        $bundle = "${{ steps.locate.outputs.bundle_dir }}"
-        New-Item -ItemType File -Force -Path (Join-Path $bundle "._sc_") | Out-Null
-        $tplDir = Join-Path $bundle "editor_data/export_templates/${env:TEMPLATE_VERSION}"
-        New-Item -ItemType Directory -Force -Path $tplDir | Out-Null
-        $templates = Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -Include "web_release.zip","web_debug.zip"
-        if (-not $templates) {
-          Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -File | Select-Object -ExpandProperty FullName
-          throw "No web_release.zip / web_debug.zip found in the fork bundle."
-        }
-        $templates | ForEach-Object { Copy-Item $_.FullName -Destination $tplDir -Force; Write-Host "Installed template: $($_.Name)" }
-        Write-Host "Templates in ${tplDir}:"; Get-ChildItem $tplDir
+        BUNDLE_DIR: ${{ steps.locate.outputs.bundle_dir }}
+        TEMPLATE_VERSION: ${{ steps.toolchain.outputs.template_version }}
+      run: '& "${{ github.action_path }}/scripts/install-templates.ps1"'
 
     - name: Register bundled NuGet source (if present)
       shell: pwsh
-      run: |
-        $nuget = Get-ChildItem -Path "$env:RUNNER_TEMP/godot" -Recurse -Directory -Filter "nuget" | Select-Object -First 1
-        if ($nuget) {
-          Write-Host "Adding local NuGet source: $($nuget.FullName)"
-          dotnet nuget add source "$($nuget.FullName)" --name godot-web-fork
-        } else {
-          Write-Host "No bundled nuget folder found; relying on nuget.org."
-        }
+      run: '& "${{ github.action_path }}/scripts/register-nuget-source.ps1"'
 
     - name: Restore / build (net9.0)
       shell: pwsh
@@ -151,14 +123,9 @@ runs:
 
     - name: Export Web (headless CLI)
       shell: pwsh
-      run: |
-        New-Item -ItemType Directory -Force -Path "build/web" | Out-Null
-        & "${{ steps.locate.outputs.godot_exe }}" --headless --path . --export-release "Web" "build/web/index.html" 2>&1 | Tee-Object -FilePath export.log
-        if (-not (Test-Path "build/web/index.html")) {
-          Write-Host "::error::Export did not produce build/web/index.html — see export.log"
-          exit 1
-        }
-        Write-Host "Export output:"; Get-ChildItem build/web
+      env:
+        GODOT_EXE: ${{ steps.locate.outputs.godot_exe }}
+      run: '& "${{ github.action_path }}/scripts/export-web.ps1"'
 
     - name: Upload web export artifact
       if: always()

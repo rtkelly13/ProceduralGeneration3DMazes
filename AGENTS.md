@@ -116,6 +116,32 @@ In Godot 2D rendering:
 3. Add tests in `tests/`
 4. Add UI in `scripts/ui/` and `scenes/`
 
+## Web Export Constraints (read before adding BCL dependencies)
+
+This project ships a browser build (`maze.ryankelly.dev`) via an **experimental**
+C#→WASM export on a community-patched Godot editor. See
+[docs/WEB_EXPORT.md](./docs/WEB_EXPORT.md) for how it works and
+[docs/WEB_EXPORT_ROADMAP.md](./docs/WEB_EXPORT_ROADMAP.md) for the plan to get onto
+official support.
+
+**The web runtime is a subset of desktop .NET. These fail *only* in the browser — the
+desktop build and the whole test suite stay green:**
+
+| Don't use | Why |
+|---|---|
+| Culture-sensitive formatting/parsing | `InvariantGlobalization=true` is forced; culture data is trimmed out |
+| `System.Security.Cryptography` | Crypto BCL APIs are non-functional in the patched runtime |
+| GDExtension / native addons | The .NET runtime is built without position-independent code |
+
+Prefer `CultureInfo.InvariantCulture` explicitly, and keep `scripts/maze/` free of
+platform-specific BCL calls. If you add anything in the table above, **test it on web
+explicitly**: comment `/preview` on the PR and check the smoke test result — a green
+desktop CI proves nothing about the browser build.
+
+**Version locking:** the patched editor tag and export templates live in
+`.github/web-toolchain.env`, and `Godot.NET.Sdk` in the `.csproj` must match them at
+patch level. CI fails fast on drift. Never hardcode these versions into workflow files.
+
 ## Running the Game
 
 ```bash
