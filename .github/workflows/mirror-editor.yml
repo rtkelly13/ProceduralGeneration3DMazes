@@ -1,0 +1,71 @@
+name: Mirror Patched Editor
+
+# Mirrors the patched Godot web-export editor to a release on THIS repository, so the web
+# pipeline no longer depends on a third-party release staying published.
+#
+# WHY: the export needs a Windows editor build from ComplexRobot/godot-dotnet-web-export (see
+# docs/WEB_EXPORT.md). That fork is actively maintained -- it matched upstream 4.7.1 within two
+# days -- but "maintained today" is not "available forever". A deleted or re-published release
+# breaks the export outright, and the checksum pin turns a silent substitution into a hard
+# failure but cannot conjure the bytes back.
+#
+# Run this once per pinned editor version, then point GODOT_FORK_REPO in
+# .github/web-toolchain.env at this repository. The export action already treats the repo as
+# config, so that is a one-line change.
+#
+# Deliberately manual: it uploads ~165 MB to a release, which is not something to do on a
+# schedule or a push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Editor release tag to mirror (blank = value from .github/web-toolchain.env)"
+        required: false
+        default: ""
+      source_repo:
+        description: "Upstream repo to mirror from (blank = GODOT_FORK_REPO from the toolchain file)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write # needed to create the mirror release
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resolve what to mirror
+        id: resolve
+        env:
+          IN_TAG: ${{ github.event.inputs.tag }}
+          IN_REPO: ${{ github.event.inputs.source_repo }}
+        run: bash .github/scripts/resolve-mirror-target.sh
+
+      - name: Download from upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ steps.resolve.outputs.repo }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          ASSET: ${{ steps.resolve.outputs.asset }}
+        run: |
+          set -euo pipefail
+          gh release download "$TAG" --repo "$REPO" --pattern "$ASSET" --dir .
+
+      - name: Verify against the pinned checksum
+        env:
+          ASSET: ${{ steps.resolve.outputs.asset }}
+        run: bash .github/scripts/verify-mirror-checksum.sh
+
+      - name: Publish mirror release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          ASSET: ${{ steps.resolve.outputs.asset }}
+          SOURCE_REPO: ${{ steps.resolve.outputs.repo }}
+          TARGET_REPO: ${{ github.repository }}
+        run: bash .github/scripts/publish-mirror-release.sh

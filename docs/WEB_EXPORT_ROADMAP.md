@@ -92,12 +92,17 @@ Make the current setup cheap to maintain and cheap to leave.
       (`4.7.1` / `4.7.1.stable.mono` / `4.7.1-stable`) and requires exact agreement,
       and fails *before* the 165 MB editor download if the target tag has no pinned
       checksum.
-- [ ] **Mirror the editor binary.** The single highest-value remaining item. Copy the
-      exact editor zip we depend on to storage we control (a release asset on this
-      repo, or S3), then point `GODOT_FORK_REPO` at it. Today a deleted upstream
-      release breaks CI outright. The checksum pin means a mirror is trivially
-      verifiable — it must hash to the value already in
-      [`editor-checksums.txt`](../.github/editor-checksums.txt).
+- [x] **Mirror the editor binary.** [`mirror-editor.yml`](../.github/workflows/mirror-editor.yml)
+      downloads the pinned editor, **verifies it against the SHA-256 in
+      [`editor-checksums.txt`](../.github/editor-checksums.txt) before uploading** — mirroring
+      unverified bytes would launder a compromised upstream into a trusted location — and
+      publishes it as a release on this repository. Idempotent, so re-running replaces the
+      asset.
+
+      **Still needs one manual run** (`workflow_dispatch`, ~165 MB upload), then set
+      `GODOT_FORK_REPO` in [`web-toolchain.env`](../.github/web-toolchain.env) to this repo.
+      Deliberately manual rather than scheduled: it is a large upload done once per pinned
+      version.
 - [ ] **Guard the feature gaps in code, not prose.** Invariant globalization and the
       missing crypto APIs fail *only on web* — desktop builds and the test suite stay
       green. Add an analyzer/test that rejects culture-sensitive formatting and

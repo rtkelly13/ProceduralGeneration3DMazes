@@ -8,11 +8,40 @@ nothing.
 `toHaveScreenshot()` snapshot comparison — the standard for web visual regression. The repo
 already uses Playwright for the post-deploy smoke test, so this adds no new tool.
 
-**Status:** harness built and self-verified. URL-parameter seeding is now **implemented** by
-the in-app test bridge ([TEST_BRIDGE.md](./TEST_BRIDGE.md)). The maze suite remains **skipped**
-until a deploy confirms the bridge works under the patched export template — deliberately
-skipped rather than failing, so it can't report a false red. Flip `MAZE_TEST_BRIDGE=1` once
-confirmed.
+**Status:** harness built and self-verified. URL-parameter seeding is **implemented** by the
+in-app test bridge ([TEST_BRIDGE.md](./TEST_BRIDGE.md)), and the bridge is now **confirmed
+working in the patched web export** on a real deploy — so `MAZE_TEST_BRIDGE=1` is set in CI and
+that blocker is gone.
+
+**One thing still blocks this suite: no baseline PNGs are committed.** Playwright fails a
+missing-snapshot test on CI rather than silently writing one, so switching it on now would
+redden every deploy for a reason that has nothing to do with the build. It is therefore gated
+separately on `MAZE_VISUAL_BASELINES`, and the procedure below is the remaining work.
+
+## Generating the baselines (the remaining step)
+
+The web build cannot be produced on Linux or macOS (see [WEB_EXPORT.md](./WEB_EXPORT.md)), so
+baselines have to come from a deployed build rather than a local run:
+
+1. Deploy the commit you want to baseline — dispatch `web-export.yml` on its ref
+   (`deploy_target` defaults to `preview`); see
+   [BUILD_VERIFICATION.md](./BUILD_VERIFICATION.md).
+2. Against that URL, run the suite with `--update-snapshots`:
+
+   ```sh
+   cd tests/visual
+   MAZE_URL=<deploy-url> MAZE_TEST_BRIDGE=1 MAZE_VISUAL_BASELINES=1 \
+     npx playwright test --project=maze --update-snapshots
+   ```
+
+3. **Inspect every generated PNG before committing.** A baseline captured from a broken build
+   silently makes the breakage the expected result, which is worse than having no baseline —
+   the suite would then go red only when the bug is *fixed*.
+4. Commit `tests/visual/maze.spec.ts-snapshots/` and set `MAZE_VISUAL_BASELINES: "1"` in
+   `web-export.yml` **in the same commit**, so the flag and the files can never disagree.
+
+Baselines are platform-specific — Playwright suffixes them with the platform, and the committed
+ones must come from a Linux run to match the `ubuntu-latest` CI runner.
 
 ## How this depends on the seeding work
 

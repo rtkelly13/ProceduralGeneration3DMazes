@@ -111,6 +111,7 @@ In Godot 2D rendering:
 - Session state/behaviour (Godot-free): `scripts/session/`
 - UI code: `scripts/ui/`
 - Web test bridge: `scripts/testing/`
+- Build identity (About screen): `scripts/build/`
 
 ## Adding New Features
 
@@ -126,7 +127,7 @@ Four layers, each with a different cost. **Push tests down** — see
 
 | Layer | Command | Needs |
 |---|---|---|
-| Unit + integration (551 tests, ~10s) | `cd tests && dotnet test` | .NET only |
+| Unit + integration (584 tests, ~1s) | `cd tests && dotnet test` | .NET only |
 | Scene / UI (in-engine) | `dotnet build -p:IncludeSceneTests=true` then `godot --headless --path . res://tests/scene/scene_tests.tscn` | Godot binary |
 | Functional (browser) | `cd tests/visual && npx playwright test --project=functional` | deployed build |
 | Visual | `cd tests/visual && npx playwright test --project=maze` | deployed build |
@@ -192,12 +193,45 @@ desktop build and the whole test suite stay green:**
 
 Prefer `CultureInfo.InvariantCulture` explicitly, and keep `scripts/maze/` free of
 platform-specific BCL calls. If you add anything in the table above, **test it on web
-explicitly**: comment `/preview` on the PR and check the smoke test result — a green
-desktop CI proves nothing about the browser build.
+explicitly** — a green desktop CI proves nothing about the browser build.
+
+**CI step bodies live in script files, not YAML.** Anything beyond a one-line command belongs in
+`.github/scripts/` (workflows) or `.github/actions/export-web/scripts/` (the composite action),
+invoked from a one-line `run:`. Two rules follow from that:
+
+- **Pass values through `env:`, never `${{ }}` inside the script.** A script file cannot see
+  `${{ ... }}`, and interpolating into a command line is also the injection-prone pattern.
+  `python3 .github/scripts/check-workflow-scripts.py` (run on every PR) fails if a script reads
+  an environment variable its step does not provide — the failure mode is otherwise an empty
+  string and silently wrong behaviour, not an error.
+- **A bare `&` cannot start a YAML scalar** — it is the anchor indicator. Quote the invocation:
+  `run: '& "$env:GITHUB_ACTION_PATH/scripts/x.ps1"'`.
+
+The reason for all of this: a long script inside a block scalar cannot be linted or run outside
+CI, and some constructs simply do not survive it — a PowerShell here-string needs its terminator
+at column 0, which ends the YAML block.
+
+**To deploy and check a branch on the web, dispatch `web-export.yml` on that ref**
+(`deploy_target` defaults to `preview`); an agent can do this through the GitHub API with no
+comment and no owner privileges. Prefer it over commenting `/preview`, which is an
+`issue_comment` trigger and therefore always runs the workflow and smoke script from the
+**default branch** — so it cannot exercise a branch's own changes to either. Read the outcome
+from the run's step summaries (deploy URL, served commit, bridge verdict). If the deploy host is
+unreachable from the agent's sandbox, that is expected — the checks run in CI for exactly that
+reason; do not try to route around the network policy. See
+[docs/BUILD_VERIFICATION.md](./docs/BUILD_VERIFICATION.md).
 
 **Version locking:** the patched editor tag and export templates live in
 `.github/web-toolchain.env`, and `Godot.NET.Sdk` in the `.csproj` must match them at
 patch level. CI fails fast on drift. Never hardcode these versions into workflow files.
+
+**Build identity:** every CI build is stamped with the commit it came from, surfaced on the
+**About** screen, in `build-info.json` beside `index.html`, and in the test bridge state. The
+values come from MSBuild properties CI passes as *environment variables* (the export re-enters
+MSBuild through the Godot editor, so a `-p:` argument would not reach it) and are compiled into
+the assembly by the `GenerateBuildStamp` target — a data file would not survive the export's
+`all_resources` filter. Unstamped local builds say so rather than showing a stale hash. See
+[docs/BUILD_VERIFICATION.md](./docs/BUILD_VERIFICATION.md).
 
 ## Running the Game
 

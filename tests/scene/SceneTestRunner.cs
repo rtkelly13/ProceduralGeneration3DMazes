@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Godot;
 using ProceduralMaze.Autoload;
 using ProceduralMaze.Maze;
+using ProceduralMaze.Build;
 using ProceduralMaze.Maze.Model;
 
 namespace ProceduralMaze.SceneTests
@@ -54,6 +55,8 @@ namespace ProceduralMaze.SceneTests
 
             Run("menu scene instantiates", CheckMenuSceneInstantiates);
             Run("menu ComparisonButton is a real Button", CheckComparisonButtonIsAButton);
+            Run("menu AboutButton is a real Button", CheckAboutButtonIsAButton);
+            Run("about scene wires up and reports a build", CheckAboutSceneReportsBuild);
             Run("every scene file instantiates", CheckAllScenesInstantiate);
             Run("GameState autoload is available", CheckGameStateAutoload);
             Run("TestBridge is inert off the web platform", CheckTestBridgeInertOnDesktop);
@@ -104,6 +107,85 @@ namespace ProceduralMaze.SceneTests
                 var node = instance.FindChild("ComparisonButton", recursive: true, owned: false);
                 Assert(node is not null, "ComparisonButton not found in menu.tscn");
                 Assert(node is Button, $"ComparisonButton is {node!.GetType().Name}, expected Button");
+            }
+            finally
+            {
+                instance.QueueFree();
+            }
+        }
+
+        private static void CheckAboutButtonIsAButton()
+        {
+            var instance = GD.Load<PackedScene>("res://scenes/menu.tscn").Instantiate();
+            try
+            {
+                var node = instance.FindChild("AboutButton", recursive: true, owned: false);
+                Assert(node is not null, "AboutButton not found in menu.tscn");
+                Assert(node is Button, $"AboutButton is {node!.GetType().Name}, expected Button");
+            }
+            finally
+            {
+                instance.QueueFree();
+            }
+        }
+
+        /// <summary>
+        /// Adds the About scene to the tree so its _Ready actually runs.
+        /// </summary>
+        /// <remarks>
+        /// Instantiating alone would not catch anything useful here: _Ready is where the
+        /// %UniqueName lookups happen, and a renamed or un-flagged node is precisely the
+        /// failure this needs to catch. The generated rows are checked too, because an empty
+        /// About screen would look like a working one to any test that only asserts it loads.
+        /// </remarks>
+        private void CheckAboutSceneReportsBuild()
+        {
+            var instance = GD.Load<PackedScene>("res://scenes/about.tscn").Instantiate();
+            AddChild(instance);
+            try
+            {
+                var summary = instance.FindChild("SummaryLabel", recursive: true, owned: false) as Label;
+                Assert(summary is not null, "SummaryLabel not found in about.tscn");
+                Assert(!string.IsNullOrWhiteSpace(summary!.Text), "SummaryLabel is empty — build summary was never set");
+
+                var rows = instance.FindChild("Rows", recursive: true, owned: false);
+                Assert(rows is not null, "Rows container not found in about.tscn");
+                Assert(rows!.GetChildCount() > 0, "About screen rendered no build rows");
+
+                // The commit row is the entire point of the screen; everything else is context.
+                var labels = new List<string>();
+                var values = new List<string>();
+                foreach (var row in rows.GetChildren())
+                {
+                    if (row.GetChildCount() > 0 && row.GetChild(0) is Label label)
+                    {
+                        labels.Add(label.Text);
+                    }
+
+                    if (row.GetChildCount() > 1 && row.GetChild(1) is Label value)
+                    {
+                        values.Add(value.Text);
+                    }
+                }
+
+                Assert(labels.Contains("Commit"), $"No Commit row on the About screen (found: {string.Join(", ", labels)})");
+
+                // Asserted against whichever kind of build this actually is, so the check holds
+                // whether or not CI stamped it. Both directions matter: an unstamped build must
+                // not look official, and a stamped one must show its real commit rather than a
+                // stale or placeholder value.
+                if (CurrentBuild.Info.IsOfficial)
+                {
+                    Assert(!labels.Contains("Provenance"),
+                        "A CI-stamped build must not carry the untraceable-build warning");
+                    Assert(values.Contains(CurrentBuild.Info.Commit),
+                        $"About screen does not show the stamped commit {CurrentBuild.Info.Commit}");
+                }
+                else
+                {
+                    Assert(labels.Contains("Provenance"),
+                        "An unstamped build must show the Provenance warning, otherwise a local build looks official");
+                }
             }
             finally
             {

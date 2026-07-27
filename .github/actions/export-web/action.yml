@@ -2,7 +2,6 @@ name: "Export Godot C# project to Web (WASM)"
 description: >
   Builds an experimental C#/.NET WebAssembly export using ComplexRobot's patched
   Windows editor build. Must run on a windows-latest runner. Produces build/web.
-  Step logic lives in ./scripts/*.ps1.
 
 inputs:
   # These three intentionally default to EMPTY. When empty they are resolved from
@@ -26,6 +25,30 @@ inputs:
     description: "Token for downloading the fork release via gh"
     required: true
 
+  # Build stamp. Compiled into the binary so the About screen and the test bridge can report
+  # which commit produced the running build. Blank is legitimate — it produces a build that
+  # honestly reports itself as untraceable rather than one carrying a misleading hash.
+  build_commit:
+    description: "Full commit SHA this build is made from (blank = unstamped)"
+    required: false
+    default: ""
+  build_branch:
+    description: "Branch or tag name, without any refs/heads/ prefix"
+    required: false
+    default: ""
+  build_repository:
+    description: "owner/repo, used to build commit and run links"
+    required: false
+    default: ""
+  build_run_id:
+    description: "GitHub Actions run id that produced this build"
+    required: false
+    default: ""
+  build_run_attempt:
+    description: "Run attempt — a re-run of the same commit is a different artefact"
+    required: false
+    default: ""
+
 outputs:
   web_dir:
     description: "Path to the exported web output"
@@ -36,6 +59,12 @@ outputs:
   template_version:
     description: "The export-template version actually used for this export"
     value: ${{ steps.toolchain.outputs.template_version }}
+  build_commit:
+    description: >
+      The commit this export was actually stamped with. Prefer this over github.sha when
+      asserting what a deploy serves: for issue_comment-triggered runs github.sha is the
+      default branch, not the PR head that was built.
+    value: ${{ steps.stamp.outputs.commit }}
 
 runs:
   using: composite
@@ -47,7 +76,21 @@ runs:
         IN_FORK_REPO: ${{ inputs.fork_repo }}
         IN_FORK_TAG: ${{ inputs.godot_fork_tag }}
         IN_TEMPLATE_VERSION: ${{ inputs.template_version }}
-      run: '& "${{ github.action_path }}/scripts/resolve-toolchain.ps1"'
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/resolve-toolchain.ps1"'
+
+    - name: Resolve build stamp
+      id: stamp
+      shell: pwsh
+      env:
+        IN_COMMIT: ${{ inputs.build_commit }}
+        IN_BRANCH: ${{ inputs.build_branch }}
+        IN_REPOSITORY: ${{ inputs.build_repository }}
+        IN_RUN_ID: ${{ inputs.build_run_id }}
+        IN_RUN_ATTEMPT: ${{ inputs.build_run_attempt }}
+        CTX_REPOSITORY: ${{ github.repository }}
+        CTX_RUN_ID: ${{ github.run_id }}
+        CTX_RUN_ATTEMPT: ${{ github.run_attempt }}
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/resolve-build-stamp.ps1"'
 
     - name: Guard against version drift
       shell: pwsh
@@ -55,7 +98,7 @@ runs:
         TEMPLATE_VERSION: ${{ steps.toolchain.outputs.template_version }}
         FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
         ASSET: ${{ steps.toolchain.outputs.asset }}
-      run: '& "${{ github.action_path }}/scripts/check-version-drift.ps1"'
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/check-version-drift.ps1"'
 
     - name: Set up .NET 9 SDK
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -81,13 +124,16 @@ runs:
         FORK_REPO: ${{ steps.toolchain.outputs.fork_repo }}
         FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
         ASSET: ${{ steps.toolchain.outputs.asset }}
-      run: '& "${{ github.action_path }}/scripts/download-editor.ps1"'
+      run: |
+        New-Item -ItemType Directory -Force -Path "${env:RUNNER_TEMP}/godot-zip" | Out-Null
+        Write-Host "Downloading $env:ASSET from $env:FORK_REPO@$env:FORK_TAG"
+        gh release download "$env:FORK_TAG" --repo "$env:FORK_REPO" --pattern "$env:ASSET" --dir "${env:RUNNER_TEMP}/godot-zip"
 
     - name: Verify editor checksum (supply-chain guard)
       shell: pwsh
       env:
         ASSET: ${{ steps.toolchain.outputs.asset }}
-      run: '& "${{ github.action_path }}/scripts/verify-editor-checksum.ps1"'
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/verify-editor-checksum.ps1"'
 
     - name: Extract editor
       shell: pwsh
@@ -98,34 +144,67 @@ runs:
     - name: Locate editor executable and bundle contents
       id: locate
       shell: pwsh
-      run: '& "${{ github.action_path }}/scripts/locate-editor.ps1"'
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/locate-editor.ps1"'
 
     - name: Install web export templates (self-contained mode)
       shell: pwsh
       env:
-        BUNDLE_DIR: ${{ steps.locate.outputs.bundle_dir }}
         TEMPLATE_VERSION: ${{ steps.toolchain.outputs.template_version }}
-      run: '& "${{ github.action_path }}/scripts/install-templates.ps1"'
+        BUNDLE_DIR: ${{ steps.locate.outputs.bundle_dir }}
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/install-templates.ps1"'
 
     - name: Register bundled NuGet source (if present)
       shell: pwsh
-      run: '& "${{ github.action_path }}/scripts/register-nuget-source.ps1"'
-
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/register-nuget-source.ps1"'
+    # Build-stamp variables are set as ENVIRONMENT variables on the build and export steps
+    # rather than passed with -p:. The export step re-enters MSBuild through the Godot editor,
+    # whose command line we do not control; MSBuild reads environment variables as properties,
+    # so this is the one channel that reaches both. Consumed by the GenerateBuildStamp target
+    # in ProceduralGeneration3DMazes.csproj. See docs/BUILD_VERIFICATION.md.
     - name: Restore / build (net9.0)
       shell: pwsh
+      env:
+        BuildCommit: ${{ steps.stamp.outputs.commit }}
+        BuildBranch: ${{ steps.stamp.outputs.branch }}
+        BuildRepository: ${{ steps.stamp.outputs.repository }}
+        BuildRunId: ${{ steps.stamp.outputs.run_id }}
+        BuildRunAttempt: ${{ steps.stamp.outputs.run_attempt }}
+        BuildTimestampUtc: ${{ steps.stamp.outputs.timestamp }}
       run: dotnet build ProceduralGeneration3DMazes.csproj -c ExportRelease /p:GodotTargetPlatform=web
 
     - name: Import resources (headless)
       shell: pwsh
       continue-on-error: true
-      run: |
-        & "${{ steps.locate.outputs.godot_exe }}" --headless --path . --import 2>&1 | Tee-Object -FilePath import.log
+      env:
+        GODOT_EXE: ${{ steps.locate.outputs.godot_exe }}
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/import-project.ps1"'
 
     - name: Export Web (headless CLI)
       shell: pwsh
       env:
         GODOT_EXE: ${{ steps.locate.outputs.godot_exe }}
-      run: '& "${{ github.action_path }}/scripts/export-web.ps1"'
+        BuildCommit: ${{ steps.stamp.outputs.commit }}
+        BuildBranch: ${{ steps.stamp.outputs.branch }}
+        BuildRepository: ${{ steps.stamp.outputs.repository }}
+        BuildRunId: ${{ steps.stamp.outputs.run_id }}
+        BuildRunAttempt: ${{ steps.stamp.outputs.run_attempt }}
+        BuildTimestampUtc: ${{ steps.stamp.outputs.timestamp }}
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/export-web.ps1"'
+    # A sibling of index.html, so the served build can be identified with a plain curl without
+    # booting a 96 MB WASM payload in a browser. The About screen reads its values from the
+    # compiled-in stamp, not from this file — they come from the same inputs, so a mismatch
+    # between the two would itself be a signal that something repackaged the deploy.
+    - name: Write build-info.json
+      shell: pwsh
+      env:
+        BUILD_COMMIT: ${{ steps.stamp.outputs.commit }}
+        BUILD_BRANCH: ${{ steps.stamp.outputs.branch }}
+        BUILD_REPOSITORY: ${{ steps.stamp.outputs.repository }}
+        BUILD_RUN_ID: ${{ steps.stamp.outputs.run_id }}
+        BUILD_RUN_ATTEMPT: ${{ steps.stamp.outputs.run_attempt }}
+        BUILD_TIMESTAMP: ${{ steps.stamp.outputs.timestamp }}
+        FORK_TAG: ${{ steps.toolchain.outputs.fork_tag }}
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/write-build-info.ps1"'
 
     - name: Upload web export artifact
       if: always()

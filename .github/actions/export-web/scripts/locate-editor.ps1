@@ -1,8 +1,17 @@
-# Find the Godot editor executable inside the extracted fork bundle (prefer the
-# console build) and report it plus its directory for later steps.
-# Outputs: godot_exe, bundle_dir
+# Locate the editor executable inside the extracted fork bundle.
+#
+# The fork's zip layout is not guaranteed stable, so the exe is discovered rather than assumed.
+#
+# Extracted from action.yml rather than inlined there: a 40-line script inside a YAML block
+# scalar cannot be linted, cannot be run outside CI, and silently breaks on constructs the
+# block scalar swallows -- a PowerShell here-string (@"..."@) needs its terminator at column 0,
+# which ends the YAML block. See docs/WEB_EXPORT.md.
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+# Actions' pwsh wrapper sets these; set them here too so the script behaves identically when
+# run by hand, and so a failing native command (git/gh/dotnet/godot) is not silently ignored.
+$PSNativeCommandUseErrorActionPreference = $true
 
 $root = "$env:RUNNER_TEMP/godot"
 $exe = Get-ChildItem -Path $root -Recurse -Filter "*.exe" |

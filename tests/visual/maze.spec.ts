@@ -12,12 +12,19 @@ import { waitForEngineBoot, waitForStableFrame, failOnRuntimeErrors } from "./ca
  * activates automatically when a `seed` parameter is present, so these URLs need nothing
  * extra. See docs/TEST_BRIDGE.md.
  *
- * Still gated on MAZE_TEST_BRIDGE=1 rather than assumed: the bridge is verified by unit and
- * scene tests, but whether it survives the *patched* web export template is unproven until a
- * deploy exists to check against. Skipping beats a false red.
+ * The bridge is CONFIRMED working in the patched web export (verified on a real deploy —
+ * window.__mazeTestApi === "1", state populated; see docs/TEST_BRIDGE.md), so MAZE_TEST_BRIDGE=1
+ * is now set in CI and this suite no longer skips for that reason.
+ *
+ * It still skips on MAZE_VISUAL_BASELINES, for a different and narrower reason: no baseline PNGs
+ * are committed yet. Playwright fails a missing-snapshot test on CI rather than silently creating
+ * one, so enabling this before baselines exist would redden every deploy for a reason unrelated
+ * to the build. Generating them needs a deploy (the web build cannot be produced on Linux) —
+ * see docs/VISUAL_REGRESSION.md for the one-time procedure.
  */
 
 const BRIDGE_PRESENT = process.env.MAZE_TEST_BRIDGE === "1";
+const BASELINES_COMMITTED = process.env.MAZE_VISUAL_BASELINES === "1";
 
 /** Fixed cases. Each must render a byte-stable maze given the seeding contract. */
 const CASES = [
@@ -31,9 +38,13 @@ test.describe("maze web build — visual regression", () => {
   test.skip(!process.env.MAZE_URL, "MAZE_URL not set — nothing deployed to screenshot.");
   test.skip(
     !BRIDGE_PRESENT,
-    "Test bridge not confirmed present in the deployed build; without URL seeding these " +
-      "screenshots would be nondeterministic. Set MAZE_TEST_BRIDGE=1 once a deploy includes " +
-      "scripts/testing/TestBridge.cs.",
+    "Test bridge disabled; without URL seeding these screenshots would be nondeterministic.",
+  );
+  test.skip(
+    !BASELINES_COMMITTED,
+    "No baseline PNGs committed yet — Playwright fails a missing snapshot on CI, which would " +
+      "redden the deploy for a reason unrelated to the build. Generate them from a deploy and " +
+      "commit them, then set MAZE_VISUAL_BASELINES=1. See docs/VISUAL_REGRESSION.md.",
   );
 
   for (const testCase of CASES) {

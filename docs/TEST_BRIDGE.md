@@ -54,6 +54,10 @@ Normal visitors never receive the API surface.
   "junctions": 9,
   "start": { "x": 0, "y": 0, "z": 0 },
   "end":   { "x": 9, "y": 9, "z": 0 },
+  "buildCommit": "12f29bd…",       // which build this is — see BUILD_VERIFICATION.md
+  "buildBranch": "main",
+  "buildTime": "2026-07-26T09:15:03Z",
+  "buildRunId": "30194540175",
   "lastCommand": "{\"cmd\":\"generate\"}",
   "lastError": ""                 // non-empty when a command failed
 }
@@ -61,6 +65,10 @@ Normal visitors never receive the API surface.
 
 `seed`, `shortestPath`, `totalCells`, `deadEnds`, `junctions`, `start` and `end` appear only
 once a maze exists (`hasMaze: true`).
+
+The `build*` fields are always present — they do not depend on any app state, and a check that
+wants to know *which build it is talking to* needs them before the app has done anything. They
+are empty on an unstamped local build. See [BUILD_VERIFICATION.md](./BUILD_VERIFICATION.md).
 
 ### Commands
 
@@ -70,7 +78,7 @@ once a maze exists (`hasMaze: true`).
 | `setLevel` | `level` | Changes the displayed Z level (clamped to the maze). |
 | `showPath` | `value` | Toggles solution-path display. |
 | `nextPath` / `previousPath` | — | Cycles alternative paths. |
-| `goto` | `scene`: `maze`\|`menu`\|`comparison`\|`loader` | Changes screen. |
+| `goto` | `scene`: `maze`\|`menu`\|`comparison`\|`loader`\|`about` | Changes screen. |
 
 `algorithm` accepts `backtracker` (or `recursivebacktracker`), `growingtree`, `binarytree`,
 `prims` — case-insensitive.
@@ -137,33 +145,56 @@ kind of mistake nothing else would notice.
 | Wire format (parsers, JSON escaping, round-trip) | ✅ 54 NUnit tests, run on every PR |
 | Compiles against the real GodotSharp 4.7.1 API | ✅ `dotnet build` of the Godot project |
 | Autoload registered; inert off web | ✅ headless scene test in Godot 4.7.1 |
-| Behaviour inside the **patched web export** | ❌ **unproven** — needs a deploy |
+| Behaviour inside the **patched web export** | ✅ **confirmed on a real deploy** |
 
-That last row is why both browser suites are gated (below) rather than switched on. The bridge
-depends on `JavaScriptBridge` behaving normally under a *patched* export template, and the one
-thing that cannot be checked without a real web build is exactly that.
+That last row was the project's longest-standing unknown, and it is now closed. On a preview
+deploy of the patched export (`workflow_dispatch`, run `30216793098`):
+
+```
+✅ TEST BRIDGE PRESENT
+   window.__mazeState: {"ready":true,"scene":"res://scenes/menu.tscn","hasMaze":false,
+                        "buildCommit":"b3995abd…","buildBranch":"claude/godot-wasm-hosting-eval-3a6h5m",
+                        "buildTime":"2026-07-26T19:25:05Z","buildRunId":"30216793098",
+                        "algorithm":"GrowingTreeAlgorithm","sizeX":20,"sizeY":20,…}
+```
+
+So `JavaScriptBridge.GetInterface("window")` plus property assignment works normally under the
+patched template, `CreateCallback` is installed, and state publishes. `MAZE_TEST_BRIDGE=1` is
+now set in CI and the functional suite runs on every deploy.
+
+The visual suite still skips, but on `MAZE_VISUAL_BASELINES` and for an unrelated reason: no
+baseline PNGs are committed yet. See [VISUAL_REGRESSION.md](./VISUAL_REGRESSION.md).
 
 ## Enabling in CI
 
-Both Playwright projects skip unless `MAZE_TEST_BRIDGE=1`:
+**Already enabled.** `MAZE_TEST_BRIDGE: "1"` is set on the functional step of both the
+`visual-production` and `visual-preview` jobs, on the strength of the deploy evidence above.
 
-```yaml
-env:
-  MAZE_URL: ${{ needs.production.outputs.url }}
-  MAZE_TEST_BRIDGE: "1"
+The smoke test still reports bridge presence on every deploy, which is how a regression would be
+noticed — if a future editor or template bump broke `JavaScriptBridge`, the functional suite would
+go red and this line would say why:
+
+```
+✅ TEST BRIDGE PRESENT — set MAZE_TEST_BRIDGE=1 to enable the browser suites
+⚠️  TEST BRIDGE ABSENT — window.__mazeTestApi never became "1".
 ```
 
-Before flipping it, confirm on a `/preview` deploy that:
+Reported, not asserted: the bridge is an automation aid, and a build without it is still a
+working build, so failing a deploy over it would block releases for no user-visible reason. But
+it is the one thing unit and scene tests cannot answer, so it is checked automatically instead
+of waiting on someone to look.
+
+If `__mazeTestApi` ever goes absent again, check the Godot console output for the
+`TestBridge: enabled` line — its absence means either the URL flag was missing or
+`GetInterface("window")` returned null under the patched template.
+
+To reproduce the check by hand against any deploy:
 
 ```js
 window.__mazeTestApi === "1"          // with ?test=1 in the URL
 typeof window.__mazeCommand === "function"
 JSON.parse(window.__mazeState).ready === true
 ```
-
-If `__mazeTestApi` is absent, check the Godot console output for the
-`TestBridge: enabled` line — its absence means either the URL flag was missing or
-`GetInterface("window")` returned null under the patched template.
 
 ## Security notes
 

@@ -55,4 +55,49 @@
     <TrimmerRootAssembly Include="System.Private.CoreLib" />
     <TrimmerRootAssembly Include="System.Runtime" />
   </ItemGroup>
+
+  <!--
+    Stamps the build with the commit it came from, so the About screen (and the test bridge,
+    and the post-deploy smoke test) can prove which build is being served.
+
+    Values arrive as MSBuild properties. CI sets them as ENVIRONMENT VARIABLES rather than
+    -p: arguments, because the web export is driven by the Godot editor rather than by a
+    dotnet build we control the command line of — MSBuild reads environment variables as
+    properties, so this is the one channel that works through the editor.
+
+    Unset locally, which is deliberate: a developer build reports itself as one instead of
+    inheriting a stale hash from whenever the file was last written.
+  -->
+  <Target Name="GenerateBuildStamp" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <BuildStampPath>$(IntermediateOutputPath)BuildStamp.g.cs</BuildStampPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <BuildStampLine Include="// &lt;auto-generated /&gt; Written by the GenerateBuildStamp target. Do not edit or commit." />
+      <BuildStampLine Include="namespace ProceduralMaze.Build" />
+      <BuildStampLine Include="{" />
+      <BuildStampLine Include="    internal static class BuildStamp" />
+      <BuildStampLine Include="    {" />
+      <BuildStampLine Include="        public const string Commit = &quot;$(BuildCommit)&quot;%3B" />
+      <BuildStampLine Include="        public const string Branch = &quot;$(BuildBranch)&quot;%3B" />
+      <BuildStampLine Include="        public const string Repository = &quot;$(BuildRepository)&quot;%3B" />
+      <BuildStampLine Include="        public const string RunId = &quot;$(BuildRunId)&quot;%3B" />
+      <BuildStampLine Include="        public const string RunAttempt = &quot;$(BuildRunAttempt)&quot;%3B" />
+      <BuildStampLine Include="        public const string TimestampUtc = &quot;$(BuildTimestampUtc)&quot;%3B" />
+      <BuildStampLine Include="    }" />
+      <BuildStampLine Include="}" />
+    </ItemGroup>
+    <!--
+      WriteOnlyWhenDifferent keeps incremental builds incremental: without it every build
+      rewrites the file and forces a full recompile of the project.
+    -->
+    <WriteLinesToFile File="$(BuildStampPath)"
+                      Lines="@(BuildStampLine)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(BuildStampPath)" />
+      <FileWrites Include="$(BuildStampPath)" />
+    </ItemGroup>
+  </Target>
 </Project>

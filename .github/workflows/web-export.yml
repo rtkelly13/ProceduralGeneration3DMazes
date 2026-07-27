@@ -3,8 +3,17 @@ name: Web Export & Deploy
 # Builds the experimental C#/.NET WebAssembly export (Windows runner), deploys it to
 # the `maze` Vercel project, then smoke-tests that the deployed build actually boots.
 #
-#   * push to main / manual dispatch → PRODUCTION deploy (aliases maze.ryankelly.dev)
+#   * push to main                    → PRODUCTION deploy (aliases maze.ryankelly.dev)
 #   * comment "/preview" on a PR      → on-demand PREVIEW deploy (unique URL, posted back)
+#   * workflow_dispatch               → PREVIEW by default; production requires
+#                                       deploy_target=production AND ref main
+#
+# workflow_dispatch is the path an automated caller (an agent with GitHub API access, with no
+# ability to comment as an OWNER) should use: it needs no comment, and unlike issue_comment it
+# runs the workflow file AND the checkout from the ref you dispatch, so a branch's own changes
+# to this workflow and to .github/smoke/ are actually exercised. An issue_comment run always
+# takes the workflow from the default branch, which is how a build stamp added on a branch
+# silently arrived empty (see docs/BUILD_VERIFICATION.md).
 #
 # The fast test gate lives in test.yml and runs on every PR. The expensive Windows
 # export here only runs on merge to main or an explicit /preview, to keep runner
@@ -27,11 +36,17 @@ on:
       - ".github/editor-checksums.txt"
       - ".github/web-toolchain.env"
   workflow_dispatch:
-    # Both blank by default: the versions come from .github/web-toolchain.env so that
-    # dispatch, push-to-main and /preview always agree. Fill one in only to test an
-    # unpinned editor build ad hoc — note the checksum guard still requires an entry
-    # in .github/editor-checksums.txt for whatever tag you name.
+    # Both version inputs are blank by default: the versions come from
+    # .github/web-toolchain.env so that dispatch, push-to-main and /preview always agree.
+    # Fill one in only to test an unpinned editor build ad hoc — note the checksum guard
+    # still requires an entry in .github/editor-checksums.txt for whatever tag you name.
     inputs:
+      deploy_target:
+        description: "preview (default, throwaway URL) or production (main only, aliases maze.ryankelly.dev)"
+        required: false
+        default: "preview"
+        type: choice
+        options: ["preview", "production"]
       godot_fork_tag:
         description: "Override patched-editor release tag (blank = .github/web-toolchain.env)"
         required: false
@@ -57,6 +72,7 @@ jobs:
     runs-on: windows-latest
     outputs:
       url: ${{ steps.deploy.outputs.url }}
+      build_commit: ${{ steps.export.outputs.build_commit }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -66,6 +82,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Export web (WASM)
+        id: export
         uses: ./.github/actions/export-web
         with:
           # Pass dispatch overrides straight through; blank resolves from
@@ -73,25 +90,24 @@ jobs:
           godot_fork_tag: ${{ github.event.inputs.godot_fork_tag }}
           template_version: ${{ github.event.inputs.template_version }}
           github_token: ${{ github.token }}
+          # Stamps the artefact with the commit it came from, so the About screen and
+          # build-info.json identify exactly what is being served.
+          build_commit: ${{ github.sha }}
+          build_branch: ${{ github.ref_name }}
+          build_repository: ${{ github.repository }}
+          build_run_id: ${{ github.run_id }}
+          build_run_attempt: ${{ github.run_attempt }}
 
       - name: Deploy to Vercel
         id: deploy
         if: env.VERCEL_TOKEN != ''
         shell: pwsh
-        run: |
-          Copy-Item infra/vercel/vercel.json build/web/vercel.json -Force
-          npm i -g vercel@latest
-          # Only a run on main ships to production (aliases maze.ryankelly.dev).
-          # Any other ref (e.g. a manual dispatch on a feature branch to test the
-          # pipeline) deploys a throwaway preview instead of touching prod.
-          if ("${{ github.ref }}" -eq "refs/heads/main") {
-            $url = (vercel deploy build/web --prod --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-            Write-Host "Production: $url"
-          } else {
-            $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-            Write-Host "Preview (non-main run): $url"
-          }
-          "url=$url" >> $env:GITHUB_OUTPUT
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+          IN_TARGET: ${{ github.event.inputs.deploy_target }}
+          BUILD_COMMIT: ${{ steps.export.outputs.build_commit }}
+        run: '& "$env:GITHUB_WORKSPACE/.github/scripts/deploy-vercel.ps1"'
 
       - name: Skip notice (no secrets)
         if: env.VERCEL_TOKEN == ''
@@ -115,28 +131,35 @@ jobs:
       - name: Smoke test the deployed build
         env:
           SMOKE_URL: ${{ needs.production.outputs.url }}
+          # Asserts the alias actually serves the artefact this run built, rather than a
+          # previous one that a failed promotion left in place. Taken from the export itself
+          # rather than github.sha, which is the wrong commit for issue_comment-triggered runs.
+          EXPECT_COMMIT: ${{ needs.production.outputs.build_commit }}
         run: node .github/smoke/smoke.mjs
 
 
   # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
   # Screenshotting a build that didn't start just yields a blank baseline.
   #
-  # MAZE_TEST_BRIDGE gates both browser suites. The in-app bridge
-  # (scripts/testing/TestBridge.cs) provides URL seeding and the state channel they need. It
-  # is unit- and scene-tested, but whether it survives the *patched* web export template is
-  # unproven until a deploy exists to check against -- so both suites skip rather than risk a
-  # false red. Flip to "1" after confirming window.__mazeTestApi === "1" on a deploy.
-  # See docs/TEST_BRIDGE.md -> "Enabling in CI".
+  # MAZE_TEST_BRIDGE is now "1": the in-app bridge (scripts/testing/TestBridge.cs) is CONFIRMED
+  # working inside the patched web export -- verified on a real deploy, where
+  # window.__mazeTestApi became "1" and __mazeState reported ready with the build stamp. That was
+  # the last unknown blocking these suites. See docs/TEST_BRIDGE.md -> "Verification status".
+  #
+  # MAZE_VISUAL_BASELINES stays "0" for a different reason: no baseline PNGs are committed, and
+  # Playwright fails a missing snapshot on CI rather than creating one, so enabling the visual
+  # project would redden every deploy for a reason unrelated to the build. The functional suite
+  # needs no baselines and runs. See docs/VISUAL_REGRESSION.md for generating them.
   visual-production:
     needs: [production, smoke-production]
     if: needs.production.outputs.url != ''
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "20"
 
@@ -150,19 +173,21 @@ jobs:
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.production.outputs.url }}
-          MAZE_TEST_BRIDGE: "0"
+          MAZE_TEST_BRIDGE: "1"
         run: npx playwright test --project=functional
 
       - name: Visual regression
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.production.outputs.url }}
-          MAZE_TEST_BRIDGE: "0"
+          MAZE_TEST_BRIDGE: "1"
+          # Flip to "1" in the same commit that adds tests/visual/maze.spec.ts-snapshots/.
+          MAZE_VISUAL_BASELINES: "0"
         run: npx playwright test --project=maze
 
       - name: Upload visual diff on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: visual-production-report
           path: |
@@ -183,6 +208,7 @@ jobs:
       pull-requests: write
     outputs:
       url: ${{ steps.deploy.outputs.url }}
+      build_commit: ${{ steps.export.outputs.build_commit }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -196,9 +222,10 @@ jobs:
       - name: Resolve PR head SHA
         id: pr
         shell: pwsh
-        run: |
-          $sha = gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefOid -q ".headRefOid"
-          "sha=$sha" >> $env:GITHUB_OUTPUT
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: '& "$env:GITHUB_WORKSPACE/.github/scripts/resolve-pr-head.ps1"'
 
       - name: Checkout PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -206,20 +233,30 @@ jobs:
           ref: ${{ steps.pr.outputs.sha }}
 
       - name: Export web (WASM)
+        id: export
         uses: ./.github/actions/export-web
         with:
           github_token: ${{ github.token }}
+          # The PR head, not github.sha — see the note in the step above.
+          build_commit: ${{ steps.pr.outputs.sha }}
+          build_branch: ${{ steps.pr.outputs.ref }}
+          build_repository: ${{ github.repository }}
+          build_run_id: ${{ github.run_id }}
+          build_run_attempt: ${{ github.run_attempt }}
 
       - name: Deploy to Vercel (preview)
         id: deploy
         if: env.VERCEL_TOKEN != ''
         shell: pwsh
-        run: |
-          Copy-Item infra/vercel/vercel.json build/web/vercel.json -Force
-          npm i -g vercel@latest
-          $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
-          "url=$url" >> $env:GITHUB_OUTPUT
-          Write-Host "Preview: $url"
+        env:
+          # Same script as the production job. IN_TARGET is pinned to preview rather than left
+          # unset: a /preview must never be able to reach production, and stating it means the
+          # script's behaviour does not depend on how PowerShell reads an absent env var.
+          IN_TARGET: "preview"
+          EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+          BUILD_COMMIT: ${{ steps.export.outputs.build_commit }}
+        run: '& "$env:GITHUB_WORKSPACE/.github/scripts/deploy-vercel.ps1"'
 
       - name: Comment preview URL
         if: env.VERCEL_TOKEN != ''
@@ -257,35 +294,38 @@ jobs:
         id: smoke
         env:
           SMOKE_URL: ${{ needs.preview.outputs.url }}
+          EXPECT_COMMIT: ${{ needs.preview.outputs.build_commit }}
         run: node .github/smoke/smoke.mjs
+
       - name: Report smoke result on PR
         if: always()
-        run: |
-          if [ "${{ steps.smoke.outcome }}" = "success" ]; then
-            gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ Smoke test passed on the preview (boots, cross-origin isolated, canvas rendered)."
-          else
-            gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ Smoke test FAILED on the preview — the build served but did not boot correctly. Check the workflow logs."
-          fi
-
+        env:
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: bash .github/scripts/report-smoke-result.sh
   # Visual regression against the DEPLOYED build, after the smoke test proves it boots.
   # Screenshotting a build that didn't start just yields a blank baseline.
   #
-  # MAZE_TEST_BRIDGE gates both browser suites. The in-app bridge
-  # (scripts/testing/TestBridge.cs) provides URL seeding and the state channel they need. It
-  # is unit- and scene-tested, but whether it survives the *patched* web export template is
-  # unproven until a deploy exists to check against -- so both suites skip rather than risk a
-  # false red. Flip to "1" after confirming window.__mazeTestApi === "1" on a deploy.
-  # See docs/TEST_BRIDGE.md -> "Enabling in CI".
+  # MAZE_TEST_BRIDGE is now "1": the in-app bridge (scripts/testing/TestBridge.cs) is CONFIRMED
+  # working inside the patched web export -- verified on a real deploy, where
+  # window.__mazeTestApi became "1" and __mazeState reported ready with the build stamp. That was
+  # the last unknown blocking these suites. See docs/TEST_BRIDGE.md -> "Verification status".
+  #
+  # MAZE_VISUAL_BASELINES stays "0" for a different reason: no baseline PNGs are committed, and
+  # Playwright fails a missing snapshot on CI rather than creating one, so enabling the visual
+  # project would redden every deploy for a reason unrelated to the build. The functional suite
+  # needs no baselines and runs. See docs/VISUAL_REGRESSION.md for generating them.
   visual-preview:
     needs: [preview, smoke-preview]
     if: needs.preview.outputs.url != ''
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "20"
 
@@ -299,19 +339,21 @@ jobs:
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.preview.outputs.url }}
-          MAZE_TEST_BRIDGE: "0"
+          MAZE_TEST_BRIDGE: "1"
         run: npx playwright test --project=functional
 
       - name: Visual regression
         working-directory: tests/visual
         env:
           MAZE_URL: ${{ needs.preview.outputs.url }}
-          MAZE_TEST_BRIDGE: "0"
+          MAZE_TEST_BRIDGE: "1"
+          # Flip to "1" in the same commit that adds tests/visual/maze.spec.ts-snapshots/.
+          MAZE_VISUAL_BASELINES: "0"
         run: npx playwright test --project=maze
 
       - name: Upload visual diff on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: visual-preview-report
           path: |

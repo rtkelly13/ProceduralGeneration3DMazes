@@ -178,6 +178,7 @@ namespace ProceduralMaze.Testing
             "maze" => "res://scenes/maze.tscn",
             "menu" => "res://scenes/menu.tscn",
             "comparison" => "res://scenes/comparison_dashboard.tscn",
+            "about" => "res://scenes/about.tscn",
             "loader" => "res://scenes/maze_loader.tscn",
             _ => null,
         };

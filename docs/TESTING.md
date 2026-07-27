@@ -16,7 +16,7 @@ layer needs a Windows-built web export and a Vercel deploy. Only test in the bro
 
 ## Unit tests — `dotnet test tests/`
 
-551 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
+584 tests. The project deliberately compiles **without the Godot SDK**, which is what keeps it
 fast and portable. Any code needing `using Godot;` cannot live here — that is the boundary, and
 it is why the scene layer exists.
 
@@ -98,6 +98,30 @@ building; none did both, which is how it survived. Fixed, with regression covera
 That is the argument for this refactor in one incident: the bug was always reachable from the
 UI, and became visible the moment the flow was testable without the engine.
 
+### Finding bugs by combination sweeping
+
+Both bugs found so far came from **combining operations no single test combined**. That is now
+cheap to search deliberately: `MazeSession` makes a full generate → wrap → graph → serialise →
+import → stats cycle a few lines of plain C#, so the option space can be swept in seconds.
+
+Doing that found a second defect: **generating a 1×1×1 maze hung forever.**
+`MazeModelFactory.BuildMaze` picked the end point with
+`while (start.Equals(end)) end = RandomPoint(...)`, and a single-cell maze has exactly one
+point, so no distinct end point could ever be drawn. A hang, not a crash — no stack trace, no
+error, just a frozen app. Reachable by importing a `SIZE 1 1 1` file, which the format permits.
+Every neighbouring size (1×2×1, 2×1×1, 1×1×2, 2×2×1) worked, which is why nothing caught it.
+Fixed with a cell-count guard plus bounded retries and a deterministic fallback; covered by
+[`tests/DegenerateMazeSizeTests.cs`](../tests/DegenerateMazeSizeTests.cs).
+
+After the fix the sweep runs clean: **418 combinations, 0 failures** — 4 algorithms × 3 maze
+types × 7 sizes (including degenerate axes) × wall-removal × door placement, plus every agent
+and solver/heuristic pairing. Worth re-running after any change to generation, import or
+solving; it is a throwaway exploratory test, not something to commit.
+
+Technique note: an exploratory sweep must log progress **to a file before each case**, not via
+`TestContext.Out`. A hang never flushes the test output, so the console shows nothing and the
+culprit is invisible — writing the label to disk first makes the last line name it.
+
 See [REGRESSION_TESTING.md](./REGRESSION_TESTING.md) for the determinism guarantees the suite
 relies on and the golden-file plan.
 
@@ -113,7 +137,9 @@ nearest thing to coverage was a test that read `menu.tscn` as **text** and asser
 contained the string `"ComparisonButton"` — proving a node name appears in a file, not that it
 is a `Button` or that the scene even instantiates. The scene runner checks the real thing.
 
-Current checks: every scene instantiates, `ComparisonButton` is genuinely a `Button`, the
+Current checks: every scene instantiates, `ComparisonButton` and `AboutButton` are genuinely
+`Button`s, the About screen wires up and reports the running build's identity (see
+[BUILD_VERIFICATION.md](./BUILD_VERIFICATION.md)), the
 `GameState` autoload initialises its `ServiceContainer`, the test bridge is inert off the web
 platform, seeded generation is deterministic *through the autoload path the app actually
 uses*, and `SetLevel` clamps to maze bounds.
@@ -180,10 +206,14 @@ deterministic seeding, plus committed baseline PNGs.
 | `test.yml` | `visual-harness` | every PR |
 | `web-export.yml` | `smoke-*` → `visual-*` (functional + visual) | merge to `main`, or `/preview` |
 
-Both browser suites are **gated on `MAZE_TEST_BRIDGE=1`** and currently skip. The bridge is
-unit- and scene-tested, but whether it behaves under the *patched* web export template is
-unproven until a deploy exists to check. Skipping beats a false red — see
-[TEST_BRIDGE.md → Enabling in CI](./TEST_BRIDGE.md#enabling-in-ci).
+The **functional** suite now runs on every deploy: the bridge is confirmed working inside the
+patched web export template, verified on a real deploy — see
+[TEST_BRIDGE.md → Verification status](./TEST_BRIDGE.md#verification-status).
+
+The **visual** suite still skips, on `MAZE_VISUAL_BASELINES` rather than on the bridge. Its
+blocker is now narrower and concrete: no baseline PNGs are committed, and Playwright fails a
+missing snapshot on CI rather than creating one, so enabling it would redden every deploy for a
+reason unrelated to the build. See [VISUAL_REGRESSION.md](./VISUAL_REGRESSION.md).
 
 The scene-test job downloads the **official upstream** Linux editor, checksum-pinned in
 [`.github/editor-checksums.txt`](../.github/editor-checksums.txt) exactly like the patched
@@ -198,6 +228,7 @@ tests fine.
   (1473 lines) is largely untested. Next: abstract `FileAccess`/`OS` in `MazeImportExport` so
   import/export round-trips become testable, then pull orchestration out of `MazeMain`
   incrementally as it is touched — not as a big-bang rewrite.
-- **`PerfectAgent` is worst-case exponential** — see
-  [REGRESSION_TESTING.md](./REGRESSION_TESTING.md). Bounded in tests, unfixed in the app.
+- ~~**`PerfectAgent` is worst-case exponential**~~ — fixed (shared visited set + explicit
+  stack); 8-run spread went from 1.8s–>120s to 1.8–2.8s. See
+  [REGRESSION_TESTING.md](./REGRESSION_TESTING.md).
 - **No golden files yet.** Designed in REGRESSION_TESTING.md, not built.

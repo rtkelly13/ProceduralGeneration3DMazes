@@ -53,6 +53,12 @@
     <Compile Include="..\scripts\ui\AnimationController.cs" Link="UI\AnimationController.cs" />
     <Compile Include="..\scripts\ui\ImportExportResult.cs" Link="UI\ImportExportResult.cs" />
     <Compile Include="..\scripts\ui\GraphLayoutType.cs" Link="UI\GraphLayoutType.cs" />
+    <!--
+      BuildInfo only, not CurrentBuild.cs: the latter reads the generated BuildStamp constants,
+      which exist solely in the Godot project's build. Keeping the split means the interesting
+      logic is covered here without this suite needing the code generator.
+    -->
+    <Compile Include="..\scripts\build\BuildInfo.cs" Link="Build\BuildInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>

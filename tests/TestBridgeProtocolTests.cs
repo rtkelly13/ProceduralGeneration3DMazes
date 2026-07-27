@@ -195,6 +195,7 @@ public class TestBridgeProtocolTests
     [TestCase("menu", "res://scenes/menu.tscn")]
     [TestCase("comparison", "res://scenes/comparison_dashboard.tscn")]
     [TestCase("loader", "res://scenes/maze_loader.tscn")]
+    [TestCase("about", "res://scenes/about.tscn")]
     public void ResolveScenePath_MapsAliases(string alias, string expected)
     {
         Assert.That(TestBridgeProtocol.ResolveScenePath(alias), Is.EqualTo(expected));

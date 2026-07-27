@@ -34,6 +34,12 @@ jobs:
       - name: Test
         run: dotnet test tests/ProceduralMaze.Tests.csproj -c Debug --nologo
 
+      # The CI step bodies live in .github/scripts and .github/actions/*/scripts rather than in
+      # YAML block scalars. A script cannot see `${{ ... }}`, so every value it needs must arrive
+      # via `env:` — and a missing one reads as empty rather than failing. This catches that.
+      - name: Check workflow scripts are wired up
+        run: python3 .github/scripts/check-workflow-scripts.py
+
   # In-engine tests for the Godot scene/UI layer, which the NUnit suite cannot reach (it
   # deliberately builds without the Godot SDK). Runs the official upstream Linux editor
   # headless -- the patched Windows fork is only needed for the *web export*, not for this.
@@ -49,16 +55,16 @@ jobs:
       GODOT_ASSET: "Godot_v4.7.1-stable_mono_linux_x86_64"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up .NET 9 SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "9.0.x"
 
       - name: Cache Godot editor
         id: godotcache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/godot
           key: godot-linux-${{ env.GODOT_VERSION }}
@@ -71,19 +77,7 @@ jobs:
             "https://github.com/godotengine/godot-builds/releases/download/$GODOT_VERSION/$GODOT_ASSET.zip"
 
       - name: Verify Godot checksum
-        run: |
-          # Same supply-chain guard as the patched web editor: never run an unverified binary.
-          expected=$(grep -v '^\s*#' .github/editor-checksums.txt | grep "$GODOT_ASSET.zip" | awk '{print $1}')
-          if [ -z "$expected" ]; then
-            echo "::error::No pinned checksum for $GODOT_ASSET.zip in .github/editor-checksums.txt"
-            exit 1
-          fi
-          actual=$(sha256sum "$RUNNER_TEMP/godot/$GODOT_ASSET.zip" | awk '{print $1}')
-          if [ "$expected" != "$actual" ]; then
-            echo "::error::Checksum mismatch for $GODOT_ASSET.zip (expected $expected, got $actual)"
-            exit 1
-          fi
-          echo "Checksum OK: $actual"
+        run: bash .github/scripts/verify-godot-checksum.sh
 
       - name: Extract Godot
         run: |
@@ -114,10 +108,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "20"
 
@@ -133,7 +127,7 @@ jobs:
 
       - name: Upload report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: visual-harness-report
           path: |
