@@ -46,3 +46,13 @@ playwright-report/
 blob-report/
 playwright/.cache/
 .last-run.json
+
+# Local scratch / planning notes
+todo.md
+
+# Temporary files, local databases, scratch files, and git worktrees
+/temp/
+temp/
+
+# Local TODO file
+TODO.md
