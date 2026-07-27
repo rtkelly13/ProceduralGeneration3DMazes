@@ -18,6 +18,10 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A pathological run once hung this job for 40 minutes before being cancelled with no
+    # diagnostic. The suite completes in ~10s; 15 minutes fails fast while leaving ample
+    # headroom for a cold restore on a slow runner.
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,3 +33,38 @@ jobs:
 
       - name: Test
         run: dotnet test tests/ProceduralMaze.Tests.csproj -c Debug --nologo
+
+  # Keeps the visual-regression harness verified on every PR without needing a deployed
+  # build. The maze suite itself can only run post-deploy (see web-export.yml), so without
+  # this the harness would sit untested until someone needed it.
+  visual-harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright (chromium)
+        working-directory: tests/visual
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Visual harness self-test
+        working-directory: tests/visual
+        run: npx playwright test --project=harness-selftest
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-harness-report
+          path: |
+            tests/visual/playwright-report/
+            tests/visual/test-results/
+          if-no-files-found: ignore

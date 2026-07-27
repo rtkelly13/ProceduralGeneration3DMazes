@@ -116,6 +116,39 @@ In Godot 2D rendering:
 3. Add tests in `tests/`
 4. Add UI in `scripts/ui/` and `scenes/`
 
+## Randomness & Determinism (read before touching generation)
+
+Maze generation is **seed-deterministic**: the same `MazeGenerationSettings.Seed` plus the
+same settings always produces the same maze. Golden-file regression testing depends on it.
+See [docs/REGRESSION_TESTING.md](./docs/REGRESSION_TESTING.md).
+
+**The rule: all randomness goes through an injected `IRandomValueGenerator`.**
+
+```csharp
+// Yes — injected, seeded, reproducible
+_randomValueGenerator.Shuffle(carvableDirections);
+var n = _randomValueGenerator.GetNext(0, size.X - 1);   // INCLUSIVE range
+
+// No — process-global, unseedable, silently breaks reproducibility
+Random.Shared.Shuffle(directions);
+var r = new Random().Next(10);
+```
+
+Banned in `scripts/maze/`: `Random.Shared`, `new Random(`, `Guid.NewGuid`,
+`DateTime.Now/UtcNow` (use the injected `ISystemClock`). `RandomnessDisciplineTests`
+enforces this by scanning source and will fail the build with the offending line — it is not
+a style preference, it's the thing that keeps the seed meaningful.
+
+The only exempt files are `RandomValueGenerator.cs` and `SystemClock.cs`, the designated
+injected sources. Adding to that exemption list adds a global-state escape hatch.
+
+**Reproducing a bug:** every result carries `MazeGenerationResults.Seed`, including runs
+that didn't ask for a seed. Put that value in `settings.Seed` to regenerate the exact maze.
+
+**Threading:** a generator instance is deliberately not thread-safe — per-instance state is
+what makes seeding work. Give each concurrent pipeline its own `ServiceContainer`, as the
+test suite does. Nothing in the maze pipeline is currently concurrent.
+
 ## Web Export Constraints (read before adding BCL dependencies)
 
 This project ships a browser build (`maze.ryankelly.dev`) via an **experimental**

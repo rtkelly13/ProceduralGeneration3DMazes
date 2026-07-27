@@ -46,7 +46,7 @@ namespace ProceduralMaze.Maze.Generation
 
                 maze.JumpToPoint(currentPoint);
                 var carvableDirections = maze.CarvableDirections();
-                ArrayHelper.Shuffle(carvableDirections);
+                _randomValueGenerator.Shuffle(carvableDirections);
                 var carved = false;
                 foreach (var direction in carvableDirections)
                 {

@@ -6,7 +6,7 @@ namespace ProceduralMaze.Benchmarks;
 
 /// <summary>
 /// Benchmarks for helper utility functions.
-/// Tests ArrayHelper.Shuffle and DirectionsFlagParser performance.
+/// Tests IRandomValueGenerator.Shuffle and DirectionsFlagParser performance.
 /// </summary>
 [MemoryDiagnoser]
 [ShortRunJob]
@@ -20,9 +20,14 @@ public class HelperBenchmarks
     private List<int> _largeList = null!;
     private DirectionsFlagParser _parser = null!;
 
+    // The production shuffle path. Fixed seed so benchmark runs are comparable to each
+    // other rather than varying with whatever Random.Shared happened to produce.
+    private RandomValueGenerator _rng = null!;
+
     [GlobalSetup]
     public void Setup()
     {
+        _rng = new RandomValueGenerator(seed: 1);
         _smallArray = Enumerable.Range(0, 6).ToArray();      // Typical direction count
         _mediumArray = Enumerable.Range(0, 100).ToArray();
         _largeArray = Enumerable.Range(0, 10000).ToArray();
@@ -51,38 +56,38 @@ public class HelperBenchmarks
     [Benchmark(Baseline = true)]
     public void Shuffle_Array_Small_6()
     {
-        ArrayHelper.Shuffle(_smallArray);
+        _rng.Shuffle(_smallArray);
     }
 
     [Benchmark]
     public void Shuffle_Array_Medium_100()
     {
-        ArrayHelper.Shuffle(_mediumArray);
+        _rng.Shuffle(_mediumArray);
     }
 
     [Benchmark]
     public void Shuffle_Array_Large_10000()
     {
-        ArrayHelper.Shuffle(_largeArray);
+        _rng.Shuffle(_largeArray);
     }
 
     // List shuffle benchmarks
     [Benchmark]
     public void Shuffle_List_Small_6()
     {
-        ArrayHelper.Shuffle(_smallList);
+        _rng.Shuffle(_smallList);
     }
 
     [Benchmark]
     public void Shuffle_List_Medium_100()
     {
-        ArrayHelper.Shuffle(_mediumList);
+        _rng.Shuffle(_mediumList);
     }
 
     [Benchmark]
     public void Shuffle_List_Large_10000()
     {
-        ArrayHelper.Shuffle(_largeList);
+        _rng.Shuffle(_largeList);
     }
 
     // DirectionsFlagParser benchmarks

@@ -9,10 +9,13 @@ namespace ProceduralMaze.Maze.Agents
     public class PerfectAgent : AgentBase
     {
         private readonly IDirectionsFlagParser _directionsFlagParser;
+        private readonly IRandomValueGenerator _randomValueGenerator;
 
-        public PerfectAgent(IDirectionsFlagParser directionsFlagParser)
+        public PerfectAgent(IDirectionsFlagParser directionsFlagParser,
+            IRandomValueGenerator randomValueGenerator)
         {
             _directionsFlagParser = directionsFlagParser;
+            _randomValueGenerator = randomValueGenerator;
         }
 
         public override AgentResults RunAgentBase(IMaze maze)
@@ -39,7 +42,7 @@ namespace ProceduralMaze.Maze.Agents
                 return previousPoints;
             }
             var directions = maze.GetDirectionsFromPoint();
-            Random.Shared.Shuffle(directions);
+            _randomValueGenerator.Shuffle(directions);
             var currentPoint = maze.CurrentPoint;
             // Check each direction for path to end
             foreach (var direction in directions)

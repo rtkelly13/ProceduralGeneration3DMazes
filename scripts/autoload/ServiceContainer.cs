@@ -21,6 +21,7 @@ namespace ProceduralMaze.Autoload
         public IMovementHelper MovementHelper { get; }
         public IPointValidity PointValidity { get; }
         public IRandomValueGenerator RandomValueGenerator { get; }
+        public ISystemClock SystemClock { get; }
         public ITimeRecorder TimeRecorder { get; }
         public IMazeHelper MazeHelper { get; }
 
@@ -74,6 +75,7 @@ namespace ProceduralMaze.Autoload
             DirectionsFlagParser = new DirectionsFlagParser();
             PointValidity = new PointValidity();
             RandomValueGenerator = new RandomValueGenerator();
+            SystemClock = new SystemClock();
             TimeRecorder = new TimeRecorder();
             
             // Model classes
@@ -97,12 +99,12 @@ namespace ProceduralMaze.Autoload
             
             // More generation classes
             DeadEndFiller = new DeadEndFiller(DeadEndModelWrapperFactory, PointsAndDirectionsRetriever);
-            RandomCarver = new RandomCarver(RandomPointGenerator, PointsAndDirectionsRetriever, DirectionsFlagParser);
+            RandomCarver = new RandomCarver(RandomPointGenerator, PointsAndDirectionsRetriever, DirectionsFlagParser, RandomValueGenerator);
 
             // Algorithms
             GrowingTreeAlgorithm = new GrowingTreeAlgorithmLinkedList(RandomPointGenerator, RandomValueGenerator, DirectionsFlagParser);
-            RecursiveBacktrackerAlgorithm = new BacktrackerAlgorithm(DirectionsFlagParser, RandomPointGenerator);
-            BinaryTreeAlgorithm = new BinaryTreeAlgorithm(DirectionsFlagParser, RandomPointGenerator);
+            RecursiveBacktrackerAlgorithm = new BacktrackerAlgorithm(DirectionsFlagParser, RandomPointGenerator, RandomValueGenerator);
+            BinaryTreeAlgorithm = new BinaryTreeAlgorithm(DirectionsFlagParser, RandomPointGenerator, RandomValueGenerator);
             PrimsAlgorithm = new PrimsAlgorithm(DirectionsFlagParser, RandomPointGenerator, RandomValueGenerator);
 
             // Solver classes
@@ -113,7 +115,7 @@ namespace ProceduralMaze.Autoload
             DijkstraAnimator = new DijkstraAnimator(GraphBuilder);
 
             // Agent classes
-            AgentFactory = new AgentFactory(DirectionsFlagParser, PointsAndDirectionsRetriever);
+            AgentFactory = new AgentFactory(DirectionsFlagParser, PointsAndDirectionsRetriever, RandomValueGenerator);
 
             // Heuristics classes
             MazeStatsGenerator = new MazeStatsGenerator(DirectionsFlagParser);
@@ -135,13 +137,14 @@ namespace ProceduralMaze.Autoload
                 HeuristicsGenerator,
                 AgentFactory,
                 TimeRecorder,
-                MazeHelper);
+                MazeHelper,
+                RandomValueGenerator);
 
             // Serialization classes
             MazeSerializer = new MazeSerializer();
             MazeDeserializer = new MazeDeserializer();
             MazeValidator = new MazeValidator(DirectionsFlagParser, MovementHelper);
-            MazeStatsSerializer = new MazeStatsSerializer();
+            MazeStatsSerializer = new MazeStatsSerializer(SystemClock);
         }
     }
 }

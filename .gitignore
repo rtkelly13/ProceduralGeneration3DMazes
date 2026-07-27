@@ -45,6 +45,7 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+.last-run.json
 
 # Local scratch / planning notes
 todo.md

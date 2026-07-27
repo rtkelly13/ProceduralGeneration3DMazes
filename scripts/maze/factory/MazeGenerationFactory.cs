@@ -23,6 +23,7 @@ namespace ProceduralMaze.Maze.Factory
         private readonly IAgentFactory _agentFactory;
         private readonly ITimeRecorder _timeRecorder;
         private readonly IMazeHelper _mazeHelper;
+        private readonly IRandomValueGenerator _randomValueGenerator;
 
         public MazeGenerationFactory(
             IMazeModelFactory mazeModelFactory,
@@ -37,7 +38,8 @@ namespace ProceduralMaze.Maze.Factory
             IHeuristicsGenerator heuristicsGenerator,
             IAgentFactory agentFactory,
             ITimeRecorder timeRecorder,
-            IMazeHelper mazeHelper)
+            IMazeHelper mazeHelper,
+            IRandomValueGenerator randomValueGenerator)
         {
             _mazeModelFactory = mazeModelFactory;
             _growingTreeAlgorithm = growingTreeAlgorithm;
@@ -52,10 +54,19 @@ namespace ProceduralMaze.Maze.Factory
             _agentFactory = agentFactory;
             _timeRecorder = timeRecorder;
             _mazeHelper = mazeHelper;
+            _randomValueGenerator = randomValueGenerator;
         }
 
         public MazeGenerationResults GenerateMaze(MazeGenerationSettings settings)
         {
+            // Reseed once, here, before anything consumes randomness. Every random decision
+            // downstream (start/end placement, carving order, wall removal, agent walks)
+            // draws from this one generator, so the seed fully determines the output.
+            // An unseeded run still gets a concrete seed, reported back on the results, so
+            // an interesting maze found by chance can always be reproduced.
+            var effectiveSeed = settings.Seed ?? RandomValueGenerator.NewRandomSeed();
+            _randomValueGenerator.Reseed(effectiveSeed);
+
             IMazeCarver carver = null!;
             var modelBuildTime = _timeRecorder.GetRunningTime(() =>
             {
@@ -132,7 +143,8 @@ namespace ProceduralMaze.Maze.Factory
                 DeadEndFillerTime = deadEndFillerTime,
                 AgentGenerationTime = agentGenerationTime,
                 HeuristicsTime = heuristicsTime,
-                TotalTime = totalTime
+                TotalTime = totalTime,
+                Seed = effectiveSeed
             };
         }
 

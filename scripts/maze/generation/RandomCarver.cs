@@ -11,14 +11,17 @@ namespace ProceduralMaze.Maze.Generation
         private readonly IRandomPointGenerator _randomPointGenerator;
         private readonly IPointsAndDirectionsRetriever _pointsAndDirectionsRetriever;
         private readonly IDirectionsFlagParser _directionsFlagParser;
+        private readonly IRandomValueGenerator _randomValueGenerator;
 
         public RandomCarver(IRandomPointGenerator randomPointGenerator, 
             IPointsAndDirectionsRetriever pointsAndDirectionsRetriever, 
-            IDirectionsFlagParser directionsFlagParser)
+            IDirectionsFlagParser directionsFlagParser,
+            IRandomValueGenerator randomValueGenerator)
         {
             _randomPointGenerator = randomPointGenerator;
             _pointsAndDirectionsRetriever = pointsAndDirectionsRetriever;
             _directionsFlagParser = directionsFlagParser;
+            _randomValueGenerator = randomValueGenerator;
         }
 
         public void CarveRandomWalls(IMazeCarver carver, WallCarverOption option, int numberOfWalls)
@@ -44,7 +47,7 @@ namespace ProceduralMaze.Maze.Generation
         private void DeadEndCarver(IMazeCarver carver, int numberOfWalls, bool hasPreferredDirection)
         {
             var pointsAndDirections = _pointsAndDirectionsRetriever.GetDeadEnds(carver).ToList();
-            ArrayHelper.Shuffle(pointsAndDirections);
+            _randomValueGenerator.Shuffle(pointsAndDirections);
             foreach (var pointAndDirections in pointsAndDirections)
             {
                 if (numberOfWalls > 0)
@@ -77,7 +80,7 @@ namespace ProceduralMaze.Maze.Generation
         {
             carver.JumpToPoint(point);
             var directions = carver.CarvableDirections();
-            ArrayHelper.Shuffle(directions);
+            _randomValueGenerator.Shuffle(directions);
             if (directions.Length > 0)
             {
                 var selectedDirection = directions.Contains(preferredDirection)
