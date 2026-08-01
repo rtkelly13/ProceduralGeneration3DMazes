@@ -258,7 +258,10 @@ jobs:
           # Same script as the production job. IN_TARGET is pinned to preview rather than left
           # unset: a /preview must never be able to reach production, and stating it means the
           # script's behaviour does not depend on how PowerShell reads an absent env var.
+          # ALIAS_PREVIEW likewise: a /preview gets its own throwaway URL and must not
+          # commandeer the stable preview-maze.ryankelly.dev bisect alias.
           IN_TARGET: "preview"
+          ALIAS_PREVIEW: "false"
           EVENT_NAME: ${{ github.event_name }}
           GIT_REF: ${{ github.ref }}
           BUILD_COMMIT: ${{ steps.export.outputs.build_commit }}
