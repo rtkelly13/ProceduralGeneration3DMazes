@@ -14,6 +14,7 @@ if (!url) {
 
 const BOOT_TIMEOUT_MS = 150_000; // ~96 MB payload + .NET WASM init
 const fatalErrors = [];
+const webglErrors = [];
 
 const browser = await chromium.launch();
 try {
@@ -21,6 +22,15 @@ try {
   page.on("pageerror", (e) => {
     const t = String(e);
     if (/abort|Aborted|RuntimeError|unreachable|out of memory/i.test(t)) fatalErrors.push(t);
+  });
+  // WebGL upload errors corrupt what's drawn without crashing anything, so a build can
+  // pass every boot check while rendering garbage. Real case: the Godot 4.7.1 export drew
+  // the entire UI as garbled boxes (broken font-atlas uploads) while booting "successfully"
+  // — the only signal was console spam of exactly these messages. Collected here, asserted
+  // after boot below.
+  page.on("console", (m) => {
+    const t = m.text();
+    if (/^WebGL: (INVALID_|out of memory)/.test(t) && webglErrors.length < 20) webglErrors.push(t);
   });
 
   console.log(`→ Opening ${url}`);
@@ -77,6 +87,18 @@ try {
   if (fatalErrors.length) {
     throw new Error("Fatal runtime error(s):\n" + fatalErrors.join("\n"));
   }
+
+  // Let a few frames render after boot, then assert the GPU upload path is clean.
+  // Deduplicated: Chrome repeats the same message per draw call, and one is enough proof.
+  await page.waitForTimeout(5_000);
+  if (webglErrors.length) {
+    const unique = [...new Set(webglErrors)];
+    throw new Error(
+      `WebGL error(s) during boot/first frames — the build renders corrupted output ` +
+        `even though it boots:\n` + unique.join("\n"),
+    );
+  }
+  console.log("  WebGL upload path clean (no INVALID_* console errors)");
 
   // Confirm the deploy is serving the build this run produced, not a stale or partially
   // replaced one. Vercel promotes an alias after upload, so "deploy succeeded" and "the new
