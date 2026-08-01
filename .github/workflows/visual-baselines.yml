@@ -1,0 +1,63 @@
+name: Generate Visual Baselines
+
+# One-click implementation of docs/VISUAL_REGRESSION.md → "Generating the baselines".
+#
+# Baselines must be produced on the SAME platform CI compares on (ubuntu-latest) —
+# Playwright suffixes snapshots per-platform, so PNGs generated on macOS/Windows would
+# never match. The web build itself can only be produced on Windows (patched editor),
+# so this runs the visual suite with --update-snapshots against an already-DEPLOYED
+# build and uploads the PNGs as an artifact.
+#
+# Procedure:
+#   1. Make sure the URL serves a KNOWN-GOOD build of a commit that includes the test
+#      bridge (seeded URLs need scripts/testing/TestBridge.cs). Verify text renders
+#      correctly by eye first — a baseline captured from a broken build makes the
+#      breakage the expected result.
+#   2. Dispatch this workflow with that URL (defaults to production).
+#   3. Download the "visual-baselines" artifact, INSPECT EVERY PNG, then commit them
+#      to tests/visual/maze.spec.ts-snapshots/ and set MAZE_VISUAL_BASELINES: "1" in
+#      web-export.yml in the SAME commit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      maze_url:
+        description: "Deployed build to baseline (must be known-good and bridge-capable)"
+        required: false
+        default: "https://maze.ryankelly.dev"
+
+permissions:
+  contents: read
+
+jobs:
+  baselines:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "20"
+
+      - name: Install Playwright (chromium)
+        working-directory: tests/visual
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Generate baselines with --update-snapshots
+        working-directory: tests/visual
+        env:
+          MAZE_URL: ${{ github.event.inputs.maze_url }}
+          MAZE_TEST_BRIDGE: "1"
+          MAZE_VISUAL_BASELINES: "1"
+        run: npx playwright test --project=maze --update-snapshots
+
+      - name: Upload baseline PNGs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: visual-baselines
+          path: tests/visual/maze.spec.ts-snapshots/
+          if-no-files-found: error
