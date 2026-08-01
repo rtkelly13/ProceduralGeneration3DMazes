@@ -35,6 +35,11 @@ on:
         description: "Export-template version folder name"
         required: true
         default: "4.7.stable.mono"
+      alias_preview:
+        description: "Alias this deploy to preview-maze.ryankelly.dev (for bisecting old commits without touching prod)"
+        type: boolean
+        required: false
+        default: false
   issue_comment:
     types: [created]
 
@@ -77,12 +82,20 @@ jobs:
           # Only a run on main ships to production (aliases maze.ryankelly.dev).
           # Any other ref (e.g. a manual dispatch on a feature branch to test the
           # pipeline) deploys a throwaway preview instead of touching prod.
-          if ("${{ github.ref }}" -eq "refs/heads/main") {
+          # A dispatch with alias_preview=true always deploys a preview (never prod,
+          # even from main) and pins it to preview-maze.ryankelly.dev — used to
+          # bisect old commits against a stable URL.
+          $aliasPreview = "${{ github.event.inputs.alias_preview }}" -eq "true"
+          if ("${{ github.ref }}" -eq "refs/heads/main" -and -not $aliasPreview) {
             $url = (vercel deploy build/web --prod --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
             Write-Host "Production: $url"
           } else {
             $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
             Write-Host "Preview (non-main run): $url"
+          }
+          if ($aliasPreview) {
+            vercel alias set $url preview-maze.ryankelly.dev --token=$env:VERCEL_TOKEN
+            Write-Host "Aliased to https://preview-maze.ryankelly.dev"
           }
           "url=$url" >> $env:GITHUB_OUTPUT
 
