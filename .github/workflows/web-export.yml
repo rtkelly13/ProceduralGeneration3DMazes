@@ -188,7 +188,7 @@ jobs:
           MAZE_URL: ${{ needs.production.outputs.url }}
           MAZE_TEST_BRIDGE: "1"
           # Flip to "1" in the same commit that adds tests/visual/maze.spec.ts-snapshots/.
-          MAZE_VISUAL_BASELINES: "0"
+          MAZE_VISUAL_BASELINES: "1"
         run: npx playwright test --project=maze
 
       - name: Upload visual diff on failure
@@ -357,7 +357,7 @@ jobs:
           MAZE_URL: ${{ needs.preview.outputs.url }}
           MAZE_TEST_BRIDGE: "1"
           # Flip to "1" in the same commit that adds tests/visual/maze.spec.ts-snapshots/.
-          MAZE_VISUAL_BASELINES: "0"
+          MAZE_VISUAL_BASELINES: "1"
         run: npx playwright test --project=maze
 
       - name: Upload visual diff on failure
