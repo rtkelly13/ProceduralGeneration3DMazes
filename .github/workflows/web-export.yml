@@ -61,11 +61,6 @@ on:
         description: "Override export-template folder name (blank = .github/web-toolchain.env)"
         required: false
         default: ""
-      alias_preview:
-        description: "Alias this deploy to preview-maze.ryankelly.dev (for bisecting old commits without touching prod)"
-        type: boolean
-        required: false
-        default: false
   issue_comment:
     types: [created]
 
@@ -117,7 +112,6 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           GIT_REF: ${{ github.ref }}
           IN_TARGET: ${{ github.event.inputs.deploy_target }}
-          ALIAS_PREVIEW: ${{ github.event.inputs.alias_preview }}
           SLOT_NUMBER: ${{ github.event.inputs.slot }}
           BUILD_COMMIT: ${{ steps.export.outputs.build_commit }}
         run: '& "$env:GITHUB_WORKSPACE/.github/scripts/deploy-vercel.ps1"'
@@ -268,7 +262,6 @@ jobs:
           # ALIAS_PREVIEW likewise: a /preview gets its own throwaway URL and must not
           # commandeer the stable preview-maze.ryankelly.dev bisect alias.
           IN_TARGET: "preview"
-          ALIAS_PREVIEW: "false"
           SLOT_NUMBER: ""
           EVENT_NAME: ${{ github.event_name }}
           GIT_REF: ${{ github.ref }}

@@ -6,7 +6,7 @@
 # docs/WEB_EXPORT.md.
 #
 # Inputs (environment):
-#   EVENT_NAME, GIT_REF, IN_TARGET (blank = preview), ALIAS_PREVIEW, SLOT_NUMBER, BUILD_COMMIT, VERCEL_TOKEN
+#   EVENT_NAME, GIT_REF, IN_TARGET (blank = preview), SLOT_NUMBER, BUILD_COMMIT, VERCEL_TOKEN
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -41,13 +41,6 @@ if ($slot) {
   $aliasDomain = "p$slot.maze.ryankelly.dev"
   vercel alias set $url $aliasDomain --token=$env:VERCEL_TOKEN
   Write-Host "DEPLOY_ALIAS=https://$aliasDomain"
-} elseif ($env:ALIAS_PREVIEW -eq 'true') {
-  # ALIAS_PREVIEW=true pins this deploy to preview-maze.ryankelly.dev
-  if ($target -ne 'preview') {
-    throw "alias_preview=true is only valid with deploy_target=preview (got $target)."
-  }
-  vercel alias set $url preview-maze.ryankelly.dev --token=$env:VERCEL_TOKEN
-  Write-Host "DEPLOY_ALIAS=https://preview-maze.ryankelly.dev"
 }
 
 "url=$url" >> $env:GITHUB_OUTPUT
