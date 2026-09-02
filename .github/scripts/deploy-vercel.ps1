@@ -6,7 +6,7 @@
 # docs/WEB_EXPORT.md.
 #
 # Inputs (environment):
-#   EVENT_NAME, GIT_REF, IN_TARGET (blank = preview), ALIAS_PREVIEW, BUILD_COMMIT, VERCEL_TOKEN
+#   EVENT_NAME, GIT_REF, IN_TARGET (blank = preview), ALIAS_PREVIEW, SLOT_NUMBER, BUILD_COMMIT, VERCEL_TOKEN
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -15,11 +15,14 @@ $PSNativeCommandUseErrorActionPreference = $true
 Copy-Item infra/vercel/vercel.json build/web/vercel.json -Force
 npm i -g vercel@latest
 
-# Target is STATED, not inferred from the ref. It used to be "main means --prod",
-# which made a dispatch the wrong branch away from silently publishing to
-# maze.ryankelly.dev -- an unacceptable footgun now that agents dispatch this
-# workflow to get preview URLs (see docs/BUILD_VERIFICATION.md).
-$target = if ($env:EVENT_NAME -eq 'push') { 'production' }
+# Determine if this deploy targets a preview slot (slot/1..3)
+$slot = if ($env:GIT_REF -match '^refs/heads/slot/([0-9]+)$') { $Matches[1] }
+        elseif (![string]::IsNullOrWhiteSpace($env:SLOT_NUMBER)) { $env:SLOT_NUMBER }
+        else { $null }
+
+# Target is STATED, not inferred from the ref.
+$target = if ($env:EVENT_NAME -eq 'push' -and $env:GIT_REF -eq 'refs/heads/main') { 'production' }
+          elseif ($slot) { 'slot' }
           elseif ([string]::IsNullOrWhiteSpace($env:IN_TARGET)) { 'preview' }
           else { $env:IN_TARGET }
 
@@ -33,10 +36,13 @@ if ($target -eq 'production') {
   $url = (vercel deploy build/web --yes --token=$env:VERCEL_TOKEN) | Select-Object -Last 1
 }
 
-# ALIAS_PREVIEW=true pins this deploy to the stable bisect/inspection URL
-# preview-maze.ryankelly.dev. Preview-only by design: production already has its own
-# alias, and pinning a prod deploy here would silently repurpose the bisect URL.
-if ($env:ALIAS_PREVIEW -eq 'true') {
+# Alias preview slot if slot is specified (e.g. p1.maze.ryankelly.dev)
+if ($slot) {
+  $aliasDomain = "p$slot.maze.ryankelly.dev"
+  vercel alias set $url $aliasDomain --token=$env:VERCEL_TOKEN
+  Write-Host "DEPLOY_ALIAS=https://$aliasDomain"
+} elseif ($env:ALIAS_PREVIEW -eq 'true') {
+  # ALIAS_PREVIEW=true pins this deploy to preview-maze.ryankelly.dev
   if ($target -ne 'preview') {
     throw "alias_preview=true is only valid with deploy_target=preview (got $target)."
   }
