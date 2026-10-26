@@ -1,0 +1,31 @@
+# .ls-lint.yml
+# Estate-wide ban on shell (.sh, .bash, .zsh) and PowerShell (.ps1, .psm1) scripts.
+# Exceptions must be explicitly listed in the `ignore:` section below.
+
+ls:
+  .sh: exists:0
+  .bash: exists:0
+  .zsh: exists:0
+  .ps1: exists:0
+  .psm1: exists:0
+  "**":
+    .sh: exists:0
+    .bash: exists:0
+    .zsh: exists:0
+    .ps1: exists:0
+    .psm1: exists:0
+
+ignore:
+  - .git
+  - .venv
+  - node_modules
+  - temp
+  - .temp
+  - .worktrees
+  - bin
+  - obj
+  - dist
+  - build
+  # Explicit repository exceptions:
+  - .github/actions/export-web/scripts/**
+  - .github/scripts/**
