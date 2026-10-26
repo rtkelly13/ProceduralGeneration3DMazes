@@ -14,13 +14,48 @@ ls:
     .zsh: exists:0
     .ps1: exists:0
     .psm1: exists:0
+  scripts:
+    .dir: regex:.*
+    .md: regex:.*
+    .json: regex:.*
+    .yml: regex:.*
+    .yaml: regex:.*
+    .toml: regex:.*
+    .xml: regex:.*
+    .sql: regex:.*
+    .txt: regex:.*
+    .cs: regex:.*
+    .fsx: regex:.*
+    .gd: regex:.*
+    .cs.uid: regex:.*
+    .py: exists:0
+    .*: exists:0
+  "scripts/**":
+    .dir: regex:.*
+    .md: regex:.*
+    .json: regex:.*
+    .yml: regex:.*
+    .yaml: regex:.*
+    .toml: regex:.*
+    .xml: regex:.*
+    .sql: regex:.*
+    .txt: regex:.*
+    .cs: regex:.*
+    .fsx: regex:.*
+    .gd: regex:.*
+    .cs.uid: regex:.*
+    .py: exists:0
+    .*: exists:0
 
 ignore:
   - .git
   - .venv
+  - "**/.venv"
   - node_modules
+  - "**/node_modules"
   - temp
   - .temp
+  - "**/temp"
   - .worktrees
   - bin
   - obj
